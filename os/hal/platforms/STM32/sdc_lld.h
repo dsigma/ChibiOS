@@ -134,21 +134,7 @@
  */
 #if (defined(STM32F4XX) || defined(STM32F2XX))
 #define STM32_SDIO_DIV_HS                   0
-
-#  if STM32_HCLK == 168000000
-#    define STM32_SDIO_DIV_LS                   120
-#  else
-#    if STM32_HCLK == 84000000
-#      define STM32_SDIO_DIV_LS                   61
-#    else
-#      if STM32_HCLK == 42000000
-#        define STM32_SDIO_DIV_LS                   32
-#      else
-#        error "This make brake SDIO"
-#      endif
-#    endif
-#  endif
-
+#define STM32_SDIO_DIV_LS                   ((STM32_PLL48CLK / 400000) - 2)
 
 #elif STM32_HCLK > 48000000
 #define STM32_SDIO_DIV_HS                   1
@@ -165,6 +151,8 @@
 #if (defined(STM32F4XX) || defined(STM32F2XX))
 #if !STM32_CLOCK48_REQUIRED
 #error "SDIO requires STM32_CLOCK48_REQUIRED to be enabled"
+#elif STM32_PLL48CLK != 48000000
+#error "STM32 PLL CLK must be 48mhz to properly drive the SDIO peripheral"
 #endif
 
 #define STM32_SDC_WRITE_TIMEOUT                                             \
