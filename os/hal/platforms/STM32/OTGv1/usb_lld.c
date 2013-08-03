@@ -918,7 +918,7 @@ void usb_lld_start(USBDriver *usbp) {
     /* USB 2.0 High Speed PHY.*/
     otgp->DCFG = 0x02200000 | DCFG_DSPD_HS;
 #else
-#  if STM32_USE_USB_OTG2_HS && STM32_USE_USB_OTG2_HS_FS
+#  if STM32_USE_USB_OTG2_HS_FS
     /* USB 2.0 High Speed PHY but in full speed mode*/
     otgp->DCFG = 0x02200000 | DCFG_DSPD_HS_FS;
 #  else

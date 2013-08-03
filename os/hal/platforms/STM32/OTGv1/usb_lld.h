@@ -70,6 +70,24 @@
 #endif
 
 /**
+ * @brief   Enable or disable the use of an external ULPI phy.
+ * @details If set to @p TRUE the ULPI Phy support is enabled
+ * @note    The default is @p FALSE.
+ */
+#if !defined(STM32_USE_USB_OTG2_ULPI) || defined(__DOXYGEN__)
+#define STM32_USE_USB_OTG2_ULPI                  FALSE
+#endif
+
+/**
+ * @brief   Enables USB 2.0 phy in high speed mode
+ * @details If set to @p TRUE run in high speed mode.
+ * @note    The default is @p FALSE.
+ */
+#if !defined(STM32_USE_USB_OTG2_HS) || defined(__DOXYGEN__)
+#define STM32_USE_USB_OTG2_HS                  FALSE
+#endif
+
+/**
  * @brief   Enables or disables OTG2 high speed in full speed mode.
  * @details If set to @p TRUE run in full speed mode.
  * @note    The default is @p FALSE.
@@ -77,7 +95,6 @@
 #if !defined(STM32_USE_USB_OTG2_HS_FS) || defined(__DOXYGEN__)
 #define STM32_USE_USB_OTG2_HS_FS                  FALSE
 #endif
-
 
 /**
  * @brief   OTG1 interrupt priority level setting.
@@ -187,6 +204,17 @@
 #if STM32_USBCLK != 48000000
 #error "the USB OTG driver requires a 48MHz clock"
 #endif
+
+#if STM32_USE_USB_OTG2_ULPI && !STM32_USB_USE_OTG2
+#error "ULPI must run on the OTG2 interface"
+#endif
+
+#if STM32_USE_USB_OTG2_HS && !STM32_USB_USE_OTG2
+#error "USB High Speed must run on the OTG2 interface"
+#endif
+
+
+
 
 /*===========================================================================*/
 /* Driver data structures and types.                                         */
