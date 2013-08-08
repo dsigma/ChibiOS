@@ -36,8 +36,6 @@
 extern SerialUSBDriver SDU1;
 
 
-
-
 /*see www.usb.org/developers/whitepapers/iadclasscode_r10.pdf*/
 #define MULTI_FUNCTION_DEVICE_CLASS       0xEF
 #define MULTI_FUNCTION_SUB_CLASS          0x02
@@ -261,22 +259,20 @@ const USBDescriptor msd_strings[] = {
  * Handles the GET_DESCRIPTOR callback. All required descriptors must be
  * handled here.
  */
-static const USBDescriptor *get_descriptor(USBDriver *usbp,
-                                           uint8_t dtype,
-                                           uint8_t dindex,
-                                           uint16_t lang) {
+static const USBDescriptor *get_descriptor(USBDriver *usbp, uint8_t dtype,
+                                           uint8_t dindex, uint16_t lang) {
 
   (void)usbp;
   (void)lang;
   switch (dtype) {
-  case USB_DESCRIPTOR_DEVICE:
-    return &msd_device_descriptor;
-  case USB_DESCRIPTOR_CONFIGURATION:
-    return &msd_configuration_descriptor;
-  case USB_DESCRIPTOR_STRING:
-    if (dindex < 4)
-      return &msd_strings[dindex];
-    break;
+    case USB_DESCRIPTOR_DEVICE:
+      return &msd_device_descriptor;
+    case USB_DESCRIPTOR_CONFIGURATION:
+      return &msd_configuration_descriptor;
+    case USB_DESCRIPTOR_STRING:
+      if (dindex < 4)
+        return &msd_strings[dindex];
+      break;
   }
   return NULL;
 }
@@ -361,39 +357,40 @@ static const USBEndpointConfig epCDC2config = {
  * Handles the USB driver global events.
  */
 static void usb_event(USBDriver *usbp, usbevent_t event) {
-    USBMassStorageDriver *msdp = (USBMassStorageDriver *)usbp->in_params[USB_MS_DATA_EP - 1];
+  USBMassStorageDriver *msdp =
+      (USBMassStorageDriver *)usbp->in_params[USB_MS_DATA_EP - 1];
   switch (event) {
-  case USB_EVENT_RESET:
-    msdp->reconfigured_or_reset_event = TRUE;
-    return;
-  case USB_EVENT_ADDRESS:
-    return;
-  case USB_EVENT_CONFIGURED:
-    chSysLockFromIsr();
-    msdp->reconfigured_or_reset_event = TRUE;
-    usbInitEndpointI(usbp, msdp->ms_ep_number, &epDataConfig);
+    case USB_EVENT_RESET:
+      msdp->reconfigured_or_reset_event = TRUE;
+      return;
+    case USB_EVENT_ADDRESS:
+      return;
+    case USB_EVENT_CONFIGURED:
+      chSysLockFromIsr()
+      msdp->reconfigured_or_reset_event = TRUE;
+      usbInitEndpointI(usbp, msdp->ms_ep_number, &epDataConfig);
 
-    /* Enables the endpoints specified into the configuration.
-     Note, this callback is invoked from an ISR so I-Class functions
-     must be used.*/
-    usbInitEndpointI(usbp, USB_CDC_DATA_REQUEST_EP, &epCDC1config);
-    usbInitEndpointI(usbp, USB_CDC_INTERRUPT_REQUEST_EP, &epCDC2config);
-    /* Resetting the state of the CDC subsystem.*/
-    sduConfigureHookI(&SDU1);
+      /* Enables the endpoints specified into the configuration.
+       Note, this callback is invoked from an ISR so I-Class functions
+       must be used.*/
+      usbInitEndpointI(usbp, USB_CDC_DATA_REQUEST_EP, &epCDC1config);
+      usbInitEndpointI(usbp, USB_CDC_INTERRUPT_REQUEST_EP, &epCDC2config);
+      /* Resetting the state of the CDC subsystem.*/
+      sduConfigureHookI(&SDU1);
 
-    /* Initialize the thread */
-    chBSemSignalI(&msdp->bsem);
+      /* Initialize the thread */
+      chBSemSignalI(&msdp->bsem);
 
-    /* signal that the device is connected */
-    chEvtBroadcastI(&msdp->evt_connected);
-    chSysUnlockFromIsr();
-    return;
-  case USB_EVENT_SUSPEND:
-    return;
-  case USB_EVENT_WAKEUP:
-    return;
-  case USB_EVENT_STALLED:
-    return;
+      /* signal that the device is connected */
+      chEvtBroadcastI(&msdp->evt_connected);
+      chSysUnlockFromIsr()
+      return;
+    case USB_EVENT_SUSPEND:
+      return;
+    case USB_EVENT_WAKEUP:
+      return;
+    case USB_EVENT_STALLED:
+      return;
   }
   return;
 }
@@ -401,13 +398,13 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
 bool_t msdCdcRequestsHook(USBDriver *usbp) {
   bool_t r;
   r = msdRequestsHook(usbp);
-  if( r ) {
-    return(r);
+  if (r) {
+    return (r);
   }
 
   r = sduRequestsHook(usbp);
 
-  return(r);
+  return (r);
 }
 
 const USBConfig msd_usb_config = {
@@ -416,23 +413,6 @@ const USBConfig msd_usb_config = {
     msdCdcRequestsHook,
     NULL
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

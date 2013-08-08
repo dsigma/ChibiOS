@@ -54,44 +54,43 @@ static msg_t Thread1(void *arg) {
   (void)arg;
   chRegSetThreadName("blinker");
 
-  BaseSequentialStream *usb_cdc = (BaseSequentialStream *) &SDU1;
+  BaseSequentialStream *usb_cdc = (BaseSequentialStream *)&SDU1;
   char c;
 
   while (TRUE) {
-   if (chSequentialStreamRead(usb_cdc, (uint8_t *)&c, 1) != 0) {
-        chprintf(usb_cdc, "You entered hex char 0x%X\r\n", c);
+    if (chSequentialStreamRead(usb_cdc, (uint8_t *)&c, 1) != 0) {
+      chprintf(usb_cdc, "You entered hex char 0x%X\r\n", c);
     }
   }
-  return(0);
+  return (0);
 }
 
 int init_sd(void) {
   BaseSequentialStream *chp = (BaseSequentialStream*)&SD2;
 
-    // power cycle sd card
-    palSetPad(GPIOC, GPIOC_SDIO_POWER);
-    chThdSleepMilliseconds(1000);
-    // this is probably longer than needed
-    palClearPad(GPIOC, GPIOC_SDIO_POWER);
-    chThdSleepMilliseconds(100);
-    // let power stabilize
+  /* power cycle sd card */
+  palSetPad(GPIOC, GPIOC_SDIO_POWER);
+  chThdSleepMilliseconds(1000);
+  /* this is probably longer than needed */
+  palClearPad(GPIOC, GPIOC_SDIO_POWER);
+  chThdSleepMilliseconds(100);
+  /* let power stabilize */
 
-    // startup sdc driver
-    sdcStart(&SDCD1, NULL);
+  /* startup sdc driver */
+  sdcStart(&SDCD1, NULL);
 
-    if (sdcConnect(&SDCD1) == CH_FAILED) {
-        chprintf(chp, "sdcConnect FAILED\r\n");
-        uint32_t errors = sdcGetAndClearErrors(&SDCD1);
-        chprintf(chp, "error flags %d\r\n", errors);
-        //FIXME: handle error
-        return(1);
-    } else {
-        chprintf(chp, "sdcConnect SUCCEEDED\r\n");
-    }
+  if (sdcConnect(&SDCD1) == CH_FAILED) {
+    chprintf(chp, "sdcConnect FAILED\r\n");
+    uint32_t errors = sdcGetAndClearErrors(&SDCD1);
+    chprintf(chp, "error flags %d\r\n", errors);
+    /*FIXME: handle error*/
+    return (1);
+  } else {
+    chprintf(chp, "sdcConnect SUCCEEDED\r\n");
+  }
 
-    return(0);
+  return (0);
 }
-
 
 /*
  * Application entry point.
@@ -117,13 +116,11 @@ int main(void) {
   chprintf(chp, "running main()\r\n");
   chThdSleepMilliseconds(50);
 
-
 #if STM32_USB_USE_OTG2
   USBDriver *usb_driver = &USBD2;
 #else
   USBDriver *usb_driver = &USBD1;
 #endif
-
 
   /*
    * Activates the card insertion monitor.
@@ -133,14 +130,12 @@ int main(void) {
   sdcConnect(&SDCD1);
 
   chprintf(chp, "setting up MSD\r\n");
-  msdInit(usb_driver, (BaseBlockDevice*) &SDCD1, &UMSD1, USB_MS_DATA_EP);
+  msdInit(usb_driver, (BaseBlockDevice*)&SDCD1, &UMSD1, USB_MS_DATA_EP);
+  UMSD1.chp = chp;
 
   chprintf(chp, "Initializing SDU1...\r\n");
   serusbcfg.usbp = usb_driver;
   sduObjectInit(&SDU1);
-
-
-
 
   /*Disconnect the USB Bus*/
   usbDisconnectBus(usb_driver);
@@ -160,9 +155,8 @@ int main(void) {
   chprintf(chp, "starting blinker thread\r\n");
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-
   while (TRUE) {
-       palTogglePad(GPIOH, GPIOH_LED1);
-       chThdSleepMilliseconds(500);
-   }
+    palTogglePad(GPIOH, GPIOH_LED1);
+    chThdSleepMilliseconds(500);
+  }
 }

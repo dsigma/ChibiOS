@@ -190,11 +190,11 @@ int main(void) {
   sdStart(&SD3, NULL);
 #endif
 
-
   /*
    * Creates the example thread.
    */
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 10, Thread1, NULL);
+  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 10, Thread1,
+                    NULL);
 
   /*
    * Normal main() thread activity, in this demo it just performs
@@ -206,8 +206,7 @@ int main(void) {
         /* Spawns a new shell.*/
         shelltp = shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
       }
-    }
-    else {
+    } else {
       /* If the previous shell exited.*/
       if (chThdTerminated(shelltp)) {
         /* Recovers memory of the previous shell.*/

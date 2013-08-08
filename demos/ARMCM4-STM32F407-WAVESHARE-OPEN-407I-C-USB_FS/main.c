@@ -183,8 +183,7 @@ int main(void) {
    */
 #if STM32_SERIAL_USE_USART2
   sdStart(&SD2, NULL);
-  palSetPadMode(GPIOA, 2, PAL_MODE_ALTERNATE(7));
-  palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(7));
+  palSetPadMode(GPIOA, 2, PAL_MODE_ALTERNATE(7)); palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(7));
 #endif
 
 #if STM32_SERIAL_USE_USART3
@@ -193,11 +192,11 @@ int main(void) {
   palSetPadMode(GPIOC, 11, PAL_MODE_ALTERNATE(7));
 #endif
 
-
   /*
    * Creates the example thread.
    */
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 10, Thread1, NULL);
+  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 10, Thread1,
+                    NULL);
 
   /*
    * Normal main() thread activity, in this demo it just performs
@@ -209,8 +208,7 @@ int main(void) {
         /* Spawns a new shell.*/
         shelltp = shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
       }
-    }
-    else {
+    } else {
       /* If the previous shell exited.*/
       if (chThdTerminated(shelltp)) {
         /* Recovers memory of the previous shell.*/

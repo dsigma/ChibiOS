@@ -43,34 +43,34 @@ static msg_t Thread1(void *arg) {
     palTogglePad(GPIOH, GPIOH_LED1);
     chThdSleepMilliseconds(500);
   }
-  return(0);
+  return (0);
 }
 
 int init_sd(void) {
   BaseSequentialStream *chp = (BaseSequentialStream*)&SD2;
 
-    // power cycle sd card
-    palSetPad(GPIOC, GPIOC_SDIO_POWER);
-    chThdSleepMilliseconds(1000);
-    // this is probably longer than needed
-    palClearPad(GPIOC, GPIOC_SDIO_POWER);
-    chThdSleepMilliseconds(100);
-    // let power stabilize
+  /* power cycle sd card */
+  palSetPad(GPIOC, GPIOC_SDIO_POWER);
+  chThdSleepMilliseconds(1000);
+  /* this is probably longer than needed */
+  palClearPad(GPIOC, GPIOC_SDIO_POWER);
+  chThdSleepMilliseconds(100);
+  /* let power stabilize */
 
-    // startup sdc driver
-    sdcStart(&SDCD1, NULL);
+  /* startup sdc driver */
+  sdcStart(&SDCD1, NULL);
 
-    if (sdcConnect(&SDCD1) == CH_FAILED) {
-        chprintf(chp, "sdcConnect FAILED\r\n");
-        uint32_t errors = sdcGetAndClearErrors(&SDCD1);
-        chprintf(chp, "error flags %d\r\n", errors);
-        //FIXME: handle error
-        return(1);
-    } else {
-        chprintf(chp, "sdcConnect SUCCEEDED\r\n");
-    }
+  if (sdcConnect(&SDCD1) == CH_FAILED) {
+    chprintf(chp, "sdcConnect FAILED\r\n");
+    uint32_t errors = sdcGetAndClearErrors(&SDCD1);
+    chprintf(chp, "error flags %d\r\n", errors);
+    /*FIXME: handle error */
+    return (1);
+  } else {
+    chprintf(chp, "sdcConnect SUCCEEDED\r\n");
+  }
 
-    return(0);
+  return (0);
 }
 
 /*
@@ -110,11 +110,12 @@ int main(void) {
   chprintf(chp, "done starting SDC\r\n");
   sdcConnect(&SDCD1);
 
-  BaseBlockDevice *bbdp = (BaseBlockDevice*) &SDCD1;
+  BaseBlockDevice *bbdp = (BaseBlockDevice*)&SDCD1;
   chprintf(chp, "setting up MSD\r\n");
   static USBMassStorageDriver UMSD1;
 
   msdInit(usb_driver, bbdp, &UMSD1, USB_MS_DATA_EP);
+  UMSD1.chp = chp;
 
   /*Disconnect the USB Bus*/
   usbDisconnectBus(usb_driver);
@@ -127,15 +128,11 @@ int main(void) {
   /*Connect the USB Bus*/
   usbConnectBus(usb_driver);
 
-
-
-
   /*
    * Creates the blinker thread.
    */
   chprintf(chp, "starting blinker thread\r\n");
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
-
 
   while (TRUE) {
     chThdSleepMilliseconds(100);

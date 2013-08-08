@@ -636,7 +636,8 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
     dsts_enumspd = (otgp->DSTS & DSTS_ENUMSPD_MASK);
     if( dsts_enumspd == DSTS_ENUMSPD_HS_480 ) {
         otgp->GUSBCFG = (otgp->GUSBCFG & ~(GUSBCFG_TRDT_MASK)) | GUSBCFG_TRDT(TRDT_HS_VALUE);
-    } else {
+    }
+    else {
         otgp->GUSBCFG = (otgp->GUSBCFG & ~(GUSBCFG_TRDT_MASK)) | GUSBCFG_TRDT(TRDT_VALUE);
     }
   }
@@ -935,7 +936,8 @@ void usb_lld_start(USBDriver *usbp) {
 #else
         otgp->GCCFG = GCCFG_VBUSASEN | GCCFG_VBUSBSEN | GCCFG_PWRDWN;
 #endif
-    } else {
+    }
+    else {
       /* Internal FS PHY activation.*/
       otgp->GCCFG = GCCFG_VBUSASEN | GCCFG_VBUSBSEN | GCCFG_PWRDWN;
     }
@@ -963,7 +965,8 @@ void usb_lld_start(USBDriver *usbp) {
     if (usbp->config->sof_cb == NULL) {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
                        GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM;
-    } else {
+    }
+    else {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
                        GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM;
     }

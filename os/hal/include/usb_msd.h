@@ -24,15 +24,15 @@
 #include "hal.h"
 
 /* Default to disabled for USB Mass Storage */
-#ifndef HAL_USE_MASS_STORAGE_USB
+#if !defined(HAL_USE_MASS_STORAGE_USB)
 #  define HAL_USE_MASS_STORAGE_USB   FALSE
 #endif
 
 #if HAL_USE_MASS_STORAGE_USB || defined(__DOXYGEN__)
 
 
-#define MSD_RW_LED_ON()   palSetPad(GPIOI, GPIOI_LED4);
-#define MSD_RW_LED_OFF()  palClearPad(GPIOI, GPIOI_LED4);
+#define MSD_RW_LED_ON()   palSetPad(GPIOI, GPIOI_LED4)
+#define MSD_RW_LED_OFF()  palClearPad(GPIOI, GPIOI_LED4)
 
 
 #if STM32_USB_USE_OTG2 && STM32_USE_USB_OTG2_HS
@@ -118,7 +118,7 @@ PACK_STRUCT_BEGIN typedef struct {
 
 typedef struct {
 		uint8_t byte[18];
-} __attribute__ ((packed)) scsi_sense_response_t;
+} PACK_STRUCT_STRUCT scsi_sense_response_t;
 
 PACK_STRUCT_BEGIN typedef struct
 {
@@ -175,6 +175,8 @@ struct USBMassStorageDriver {
 
     uint32_t read_error_count;
     uint32_t write_error_count;
+
+    BaseSequentialStream *chp; /*For debug logging*/
 };
 
 #define MSD_CONNECTED			0
