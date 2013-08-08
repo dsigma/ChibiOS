@@ -879,9 +879,7 @@ void usb_lld_start(USBDriver *usbp) {
     if (&USBD2 == usbp) {
       /* OTG HS clock enable and reset.*/
 #if STM32_USE_USB_OTG2_ULPI
-      rccEnableAHB1((RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN |
-          RCC_AHB1ENR_GPIOCEN | RCC_AHB1ENR_GPIOHEN | RCC_AHB1ENR_GPIOIEN),
-          FALSE);
+      /* Note: clocks to GPIO A, B, C, H, I should be enabled by pal_lld.c for ULPI to work.*/
       rccEnableAHB1(RCC_AHB1ENR_OTGHSULPIEN, FALSE);
 #endif
       rccEnableOTG_HS(FALSE);
