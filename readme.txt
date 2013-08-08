@@ -89,8 +89,17 @@
 *****************************************************************************
 
 *** 2.7.0 ***
-- FIX: Fixed FSMC reset on STM32F4xx (bug #420)(backported to 2.6.1
-  and 2.4.4).
+- FIX: Fixed UART4 and 5 marked as not present in STM32F30x devices (bug #426)
+  (backported to 2.6.1).
+- FIX: Fixed conditional code error in STM32 PWM driver (bug #424)(backported
+  to 2.6.1).
+- FIX: Fixed error in Guards of pwm_lld.h from STM32 (bug #423)(backported to
+  2.6.1).
+- FIX: Fixed wrong RTC macro names in STM32L1xx HAL (bug #422)(backported to
+  2.6.1 and 2.4.5).
+- FIX: Fixed CodeSourcery personal version fails to build with undefined
+  errno_r (bug #421)(backported to 2.6.1).
+- FIX: Fixed FSMC reset on STM32F4xx (bug #420)(backported to 2.6.1 and 2.4.4).
 - FIX: Fixed invalid directory links in the demo files (bug #419)(backported
   to 2.6.1).
 - FIX: Fixed missing casts in time-conversion macros (bug #418)(backported
