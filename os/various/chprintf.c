@@ -214,6 +214,13 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
       p = ftoa(p, f);
       break;
 #endif
+    case 'p':
+      /* Pointer */
+      chSequentialStreamPut(chp, '0');
+      chSequentialStreamPut(chp, 'x');
+      c = 16;
+      width = sizeof(void*);
+      goto unsigned_common;
     case 'X':
     case 'x':
       c = 16;
