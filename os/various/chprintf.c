@@ -114,9 +114,10 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
   va_end(ap);
 }
 
-//void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
+/**
+ * @brief Same as chprintf, except takes a va_list instead of ...
+ */
 void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
-  //va_list ap;
   char *p, *s, c, filler;
   int i, precision, width;
   bool_t is_long, left_align;
@@ -128,11 +129,9 @@ void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
   char tmpbuf[MAX_FILLER + 1];
 #endif
 
-  //va_start(ap, fmt);
   while (TRUE) {
     c = *fmt++;
     if (c == 0) {
-      //va_end(ap);
       return;
     }
     if (c != '%') {
