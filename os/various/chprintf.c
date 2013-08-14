@@ -183,7 +183,7 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
       break;
     case 's':
       filler = ' ';
-      if ((s = va_arg(ap, char *)) == 0)
+      if ((s = va_arg(ap, char *)) == NULL)
         s = "(null)";
       if (precision == 0)
         precision = 32767;
@@ -219,7 +219,7 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
       chSequentialStreamPut(chp, '0');
       chSequentialStreamPut(chp, 'x');
       c = 16;
-      width = sizeof(void*);
+      width = 2 * sizeof(void*);
       goto unsigned_common;
     case 'X':
     case 'x':
