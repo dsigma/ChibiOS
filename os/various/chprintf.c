@@ -25,7 +25,7 @@
  * @{
  */
 
-#include <stdarg.h>
+
 
 #include "ch.h"
 #include "chprintf.h"
@@ -84,6 +84,8 @@ static char *ftoa(char *p, double num) {
 }
 #endif
 
+
+
 /**
  * @brief   System formatted output function.
  * @details This function implements a minimal @p printf() like functionality
@@ -107,6 +109,14 @@ static char *ftoa(char *p, double num) {
  */
 void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
   va_list ap;
+  va_start(ap,fmt);
+  chvprintf(chp, fmt, ap);
+  va_end(ap);
+}
+
+//void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
+void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
+  //va_list ap;
   char *p, *s, c, filler;
   int i, precision, width;
   bool_t is_long, left_align;
@@ -118,11 +128,11 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
   char tmpbuf[MAX_FILLER + 1];
 #endif
 
-  va_start(ap, fmt);
+  //va_start(ap, fmt);
   while (TRUE) {
     c = *fmt++;
     if (c == 0) {
-      va_end(ap);
+      //va_end(ap);
       return;
     }
     if (c != '%') {
@@ -216,6 +226,7 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
 #endif
     case 'p':
       /* Pointer */
+      filler = '0';
       chSequentialStreamPut(chp, '0');
       chSequentialStreamPut(chp, 'x');
       c = 16;
@@ -266,5 +277,7 @@ unsigned_common:
     }
   }
 }
+
+
 
 /** @} */

@@ -32,10 +32,13 @@
 #define CHPRINTF_USE_FLOAT          FALSE
 #endif
 
+#include <stdarg.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
   void chprintf(BaseSequentialStream *chp, const char *fmt, ...);
+  void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap);
 #ifdef __cplusplus
 }
 #endif
