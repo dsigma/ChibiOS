@@ -94,6 +94,7 @@ static char *ftoa(char *p, double num) {
  *          The following parameter types (p) are supported:
  *          - <b>x</b> hexadecimal integer.
  *          - <b>X</b> hexadecimal long.
+ *          - <b>p</b> pointer, prefixed with 0x, and the hex address printed
  *          - <b>o</b> octal integer.
  *          - <b>O</b> octal long.
  *          - <b>d</b> decimal signed integer.
@@ -116,6 +117,9 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
 
 /**
  * @brief Same as chprintf, except takes a va_list instead of ...
+ *
+ * @param[in] chp       pointer to a @p BaseSequentialStream implementing object
+ * @param[in] fmt       formatting string
  */
 void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
   char *p, *s, c, filler;
