@@ -160,6 +160,8 @@ static msg_t Thread1(void *arg) {
     palClearPad(GPIOD, GPIOD_LED3);     /* Orange.  */
     chThdSleepMilliseconds(500);
   }
+
+  return(RDY_OK);
 }
 
 /*

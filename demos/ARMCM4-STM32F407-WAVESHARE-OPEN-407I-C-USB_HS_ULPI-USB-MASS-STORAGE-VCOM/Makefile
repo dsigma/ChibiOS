@@ -89,6 +89,7 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        $(CHIBIOS)/os/various/chprintf.c \
        $(CHIBIOS)/os/various/shell.c \
+       usb_msd_driver/usb_msd.c \
        usb_msd_cfg.c \
        main.c
 
@@ -122,7 +123,8 @@ ASMSRC = $(PORTASM)
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
          $(FATFSINC) \
-         $(CHIBIOS)/os/various
+         $(CHIBIOS)/os/various \
+         ./usb_msd_driver
 
 #
 # Project, sources and paths
