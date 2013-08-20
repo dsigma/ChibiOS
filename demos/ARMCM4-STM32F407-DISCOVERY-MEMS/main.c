@@ -212,6 +212,8 @@ static msg_t Thread1(void *arg) {
     /* Waiting until the next 250 milliseconds time interval.*/
     chThdSleepUntil(time += MS2ST(100));
   }
+
+  return(RDY_OK);
 }
 
 /*===========================================================================*/
