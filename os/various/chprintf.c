@@ -72,9 +72,15 @@ static char *ltoa(char *p, long num, unsigned radix) {
 }
 
 #if CHPRINTF_USE_FLOAT
-static char *ftoa(char *p, double num) {
+static char *ftoa(char *p, double num, const unsigned long precision_param) {
   long l;
   unsigned long precision = FLOAT_PRECISION;
+  if( precision_param > 0 ) {
+    precision = 1;
+    for(int i = 0; i < precision_param; i++ ) {
+      precision *= 10;
+    }
+  }
 
   l = num;
   p = long_to_string_with_divisor(p, l, 10, 0);
@@ -123,7 +129,7 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
  */
 void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
   char *p, *s, c, filler;
-  int i, precision, width;
+  int i, precision = 0, width;
   bool_t is_long, left_align;
   long l;
 #if CHPRINTF_USE_FLOAT
@@ -223,8 +229,10 @@ void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
       if (f < 0) {
         *p++ = '-';
         f = -f;
+      } else if( ! left_align ) {
+        *p++ = ' ';
       }
-      p = ftoa(p, f);
+      p = ftoa(p, f, precision);
       break;
 #endif
     case 'p':
