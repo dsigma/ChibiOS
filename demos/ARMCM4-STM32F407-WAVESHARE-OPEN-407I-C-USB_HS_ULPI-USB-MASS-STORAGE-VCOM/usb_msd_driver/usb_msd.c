@@ -30,6 +30,7 @@
 #include "hal.h"
 #include "usb_msd.h"
 #include "chprintf.h"
+#include "string.h"
 
 
 #if HAL_USE_MASS_STORAGE_USB || defined(__DOXYGEN__)
@@ -57,7 +58,7 @@
 /* Driver exported variables.                                                */
 /*===========================================================================*/
 
-extern const USBConfig msd_usb_config;
+//extern const USBConfig msd_usb_config;
 
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
@@ -91,12 +92,28 @@ typedef struct {
 static volatile rw_usb_sd_buffer_t rw_ping_pong_buffer[2];
 static uint8_t read_buffer[2][BLOCK_SIZE_INCREMENT];
 
+
+
 inline uint32_t swap_uint32( uint32_t val ) {
     val = ((val << 8) & 0xFF00FF00 ) | ((val >> 8) & 0xFF00FF );
     return ((val << 16) & 0xFFFF0000) | ((val >> 16) & 0x0000FFFF);
 }
 
 #define swap_uint16(x) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
+
+inline uint32_t swap_4byte_buffer(uint8_t *buff) {
+  //Note: this is specifically to avoid pointer aliasing and de-referencing words on non-word boundaries
+  uint32_t temp = 0;
+  memcpy(&temp, buff, sizeof(temp));
+  return(swap_uint32(temp));
+}
+
+inline uint16_t swap_2byte_buffer(uint8_t *buff) {
+  //Note: this is specifically to avoid pointer aliasing and de-referencing words on non-half-word boundaries
+  uint16_t temp = 0;
+  memcpy(&temp, buff, sizeof(temp));
+  return(swap_uint16(temp));
+}
 
 
 /*===========================================================================*/
@@ -117,12 +134,13 @@ inline uint32_t swap_uint32( uint32_t val ) {
  *
  * @init
  */
-void msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp,
+usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp,
              const usbep_t ms_ep_number) {
   uint8_t i;
 
   msdp->usbp = usbp;
-  msdp->state = idle;
+  msdp->driver_state = USB_MSD_DRIVER_OK;
+  msdp->state = MSD_STATE_IDLE;
   msdp->trigger_transfer_index = UINT32_MAX;
   msdp->bbdp = bbdp;
   msdp->ms_ep_number = ms_ep_number;
@@ -139,25 +157,39 @@ void msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp,
   chBSemInit(&msdp->mass_sorage_thd_bsem, FALSE);
 
   /* Initialize sense values to zero */
-  for (i = 0; i < sizeof(scsi_sense_response_t); i++)
+  for (i = 0; i < sizeof(scsi_sense_response_t); i++) {
     msdp->sense.byte[i] = 0x00;
+  }
 
   /* Response code = 0x70, additional sense length = 0x0A */
   msdp->sense.byte[0] = 0x70;
   msdp->sense.byte[7] = 0x0A;
 
   /* make sure block device is working and get info */
+
+  const uint32_t max_init_wait_time_ms = 2000;
+  const uint32_t sleep_time_ms = 50;
+  uint32_t sleep_time_counter_ms = 0;
+
   while (TRUE) {
     blkstate_t state = blkGetDriverState(bbdp);
-    if (state == BLK_READY)
+    if (state == BLK_READY) {
       break;
+    }
 
-    chThdSleepMilliseconds(50);
+    chThdSleepMilliseconds(sleep_time_ms);
+    sleep_time_counter_ms += sleep_time_counter_ms;
+    if( sleep_time_counter_ms > max_init_wait_time_ms ) {
+      msdp->driver_state = USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY;
+      break;
+    }
   }
 
   blkGetInfo(bbdp, &msdp->block_dev_info);
 
   usbp->in_params[ms_ep_number - 1] = (void *)msdp;
+
+  return(msdp->driver_state);
 }
 
 /**
@@ -167,7 +199,7 @@ void msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp,
  *
  * @api
  */
-void msdStart(USBMassStorageDriver *msdp) {
+usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp) {
   /*upon entry, USB bus should be disconnected*/
 
   if (msdThd == NULL) {
@@ -181,6 +213,8 @@ void msdStart(USBMassStorageDriver *msdp) {
                                           NORMALPRIO, MassStorageUSBTransferThd,
                                           msdp);
   }
+
+  return(msdp->driver_state);
 }
 
 /**
@@ -434,8 +468,10 @@ static bool_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
     return FALSE;
   }
 
-  uint32_t rw_block_address = swap_uint32(*(uint32_t *)&cbw->scsi_cmd_data[2]);
-  const uint16_t total_blocks = swap_uint16(*(uint16_t *)&cbw->scsi_cmd_data[7]);
+  uint32_t rw_block_address = swap_4byte_buffer(&cbw->scsi_cmd_data[2]);
+  const uint16_t total_blocks = swap_2byte_buffer(&cbw->scsi_cmd_data[7]);
+  //uint32_t rw_block_address = swap_uint32(*(uint32_t *)&cbw->scsi_cmd_data[2]);
+  //const uint16_t total_blocks = swap_uint16(*(uint16_t *)&cbw->scsi_cmd_data[7]);
   uint16_t i = 0;
 
   if (rw_block_address >= msdp->block_dev_info.blk_num) {
@@ -644,7 +680,7 @@ static bool_t SCSICommandStartStopUnit(USBMassStorageDriver *msdp) {
     /* device has been ejected */
     if (!msdp->disable_usb_bus_disconnect_on_eject) {
       chEvtBroadcast(&msdp->evt_ejected);
-      msdp->state = ejected;
+      msdp->state = MSD_STATE_EJECTED;
     }
   }
 
@@ -679,7 +715,7 @@ static bool_t msdWaitForCommandBlock(USBMassStorageDriver *msdp) {
   usbStartReceiveI(msdp->usbp, msdp->ms_ep_number);
   chSysUnlock();
 
-  msdp->state = read_cmd_block;
+  msdp->state = MSD_STATE_READ_CMD_BLOCK;
 
   /* wait for ISR */
   return TRUE;
@@ -703,7 +739,7 @@ static bool_t msdReadCommandBlock(USBMassStorageDriver *msdp) {
   msd_cbw_t *cbw = &(msdp->cbw);
 
   /* by default transition back to the idle state */
-  msdp->state = idle;
+  msdp->state = MSD_STATE_IDLE;
 
   /* check the command */
   if ((cbw->signature != MSD_CBW_SIGNATURE) || (cbw->lun > 0)
@@ -871,7 +907,7 @@ static msg_t MassStorageThd(void *arg) {
       /*If the devices is unplugged and re-plugged but did not have a CPU reset,
        * we must set the state back to idle.*/
       msdp->reconfigured_or_reset_event = FALSE;
-      msdp->state = idle;
+      msdp->state = MSD_STATE_IDLE;
     }
 
     bool_t enable_msd = true;
@@ -879,21 +915,25 @@ static msg_t MassStorageThd(void *arg) {
       enable_msd = msdp->enable_msd_callback();
     }
 
+    if( msdp->driver_state != USB_MSD_DRIVER_OK ) {
+      enable_msd = false;
+    }
+
     if (enable_msd) {
       msd_debug_print(msdp->chp, "state=%d\r\n", msdp->state);
       /* wait on data depending on the current state */
       switch (msdp->state) {
-        case idle:
+        case MSD_STATE_IDLE:
           msd_debug_print(msdp->chp, "IDL");
           wait_for_isr = msdWaitForCommandBlock(msdp);
           msd_debug_print(msdp->chp, "x\r\n");
           break;
-        case read_cmd_block:
+        case MSD_STATE_READ_CMD_BLOCK:
           msd_debug_print(msdp->chp, "RCB");
           wait_for_isr = msdReadCommandBlock(msdp);
           msd_debug_print(msdp->chp, "x\r\n");
           break;
-        case ejected:
+        case MSD_STATE_EJECTED:
           /* disconnect usb device */
           msd_debug_print(msdp->chp, "ejected\r\n");
           if (!msdp->disable_usb_bus_disconnect_on_eject) {
@@ -915,6 +955,21 @@ static msg_t MassStorageThd(void *arg) {
   }
 
   return 0;
+}
+
+
+const char* usb_msd_driver_state_t_to_str(const usb_msd_driver_state_t driver_state) {
+  switch (driver_state) {
+    case USB_MSD_DRIVER_UNINITIALIZED:
+      return ("USB_MSD_DRIVER_UNINITIALIZED");
+    case USB_MSD_DRIVER_ERROR:
+      return ("USB_MSD_DRIVER_ERROR");
+    case USB_MSD_DRIVER_OK:
+      return ("USB_MSD_DRIVER_OK");
+    case USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY:
+      return ("USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY");
+  }
+  return ("USB_MSD_DRIVER_UNKNOWN");
 }
 
 

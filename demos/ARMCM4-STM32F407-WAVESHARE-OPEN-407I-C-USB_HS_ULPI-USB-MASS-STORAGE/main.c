@@ -114,7 +114,10 @@ int main(void) {
   chprintf(chp, "setting up MSD\r\n");
   static USBMassStorageDriver UMSD1;
 
-  msdInit(usb_driver, bbdp, &UMSD1, USB_MS_DATA_EP);
+  const usb_msd_driver_state_t msd_driver_state = msdInit(usb_driver, bbdp, &UMSD1, USB_MS_DATA_EP);
+  if( msd_driver_state != USB_MSD_DRIVER_OK ) {
+    chprintf(chp, "Error initing USB MSD, %d %s\r\n", msd_driver_state, usb_msd_driver_state_t_to_str(msd_driver_state));
+  }
   UMSD1.chp = chp;
 
   /*Disconnect the USB Bus*/

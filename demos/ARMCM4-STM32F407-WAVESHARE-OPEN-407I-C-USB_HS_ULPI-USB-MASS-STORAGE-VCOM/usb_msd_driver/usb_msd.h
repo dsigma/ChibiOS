@@ -99,6 +99,7 @@
 #define SCSI_ASENSEQ_INITIALIZING_COMMAND_REQUIRED     0x02
 #define SCSI_ASENSEQ_OPERATION_IN_PROGRESS             0x07
 
+
 PACK_STRUCT_BEGIN typedef struct {
 	uint32_t signature;
 	uint32_t tag;
@@ -151,7 +152,18 @@ PACK_STRUCT_BEGIN typedef struct {
 
 typedef struct USBMassStorageDriver USBMassStorageDriver;
 
-typedef enum { idle, read_cmd_block, ejected} msd_state_t;
+typedef enum {
+  MSD_STATE_IDLE = 0,
+  MSD_STATE_READ_CMD_BLOCK,
+  MSD_STATE_EJECTED
+} msd_state_t;
+
+typedef enum {
+  USB_MSD_DRIVER_UNINITIALIZED = 0,
+  USB_MSD_DRIVER_ERROR,
+  USB_MSD_DRIVER_OK,
+  USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY,
+} usb_msd_driver_state_t;
 
 struct USBMassStorageDriver {
 	USBDriver                 *usbp;
@@ -161,6 +173,7 @@ struct USBMassStorageDriver {
 	BaseBlockDevice *bbdp;
 	EventSource evt_connected, evt_ejected;
 	BlockDeviceInfo block_dev_info;
+	usb_msd_driver_state_t driver_state;
 	msd_state_t state;
 	msd_cbw_t cbw;
 	msd_csw_t csw;
@@ -179,16 +192,15 @@ struct USBMassStorageDriver {
     BaseSequentialStream *chp; /*For debug logging*/
 };
 
-#define MSD_CONNECTED			0
-#define MSD_EJECTED				1
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-void msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp, const usbep_t  ms_ep_number);
-void msdStart(USBMassStorageDriver *msdp);
+usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp, const usbep_t  ms_ep_number);
+usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp);
 void msdUsbEvent(USBDriver *usbp, usbep_t ep);
 bool_t msdRequestsHook(USBDriver *usbp);
+const char* usb_msd_driver_state_t_to_str(const usb_msd_driver_state_t driver_state);
 #ifdef __cplusplus
 }
 #endif
