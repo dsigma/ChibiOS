@@ -25,6 +25,8 @@
 #ifndef _GPT_LLD_H_
 #define _GPT_LLD_H_
 
+#include "stm32_tim.h"
+
 #if HAL_USE_GPT || defined(__DOXYGEN__)
 
 /*===========================================================================*/
@@ -365,7 +367,7 @@ typedef uint32_t gptfreq_t;
 /**
  * @brief   GPT counter type.
  */
-typedef uint16_t gptcnt_t;
+typedef uint32_t gptcnt_t;
 
 /**
  * @brief   Driver configuration structure.
@@ -384,6 +386,12 @@ typedef struct {
    */
   gptcallback_t             callback;
   /* End of the mandatory fields.*/
+  /**
+   * @brief TIM DIER register initialization data.
+   * @note  The value of this field should normally be equal to zero.
+   * @note  Only the DMA-related bits can be specified in this field.
+   */
+  uint32_t                  dier;
 } GPTConfig;
 
 /**
@@ -430,7 +438,7 @@ struct GPTDriver {
  * @notapi
  */
 #define gpt_lld_change_interval(gptp, interval)                               \
-  ((gptp)->tim->ARR = (uint16_t)((interval) - 1))
+  ((gptp)->tim->ARR = (uint32_t)((interval) - 1))
 
 /*===========================================================================*/
 /* External declarations.                                                    */

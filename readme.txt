@@ -89,8 +89,14 @@
 *****************************************************************************
 
 *** 2.7.0 ***
+- FIX: Fixed possible unalignment in GCC Cortex-M scatter files (bug #430)
+  (backported to 2.6.2 and 2.4.6).
+- FIX: Fixed PAL driver documentation error (bug #427)(backported to 2.6.1
+  and 2.4.5).
 - FIX: Fixed UART4 and 5 marked as not present in STM32F30x devices (bug #426)
   (backported to 2.6.1).
+- FIX: Fixed warning in STM32 ICU/PWM drivers when used on STM32F3xx
+  (bug #425)(backported to 2.6.1).
 - FIX: Fixed conditional code error in STM32 PWM driver (bug #424)(backported
   to 2.6.1).
 - FIX: Fixed error in Guards of pwm_lld.h from STM32 (bug #423)(backported to
@@ -110,6 +116,11 @@
   (backported to 2.6.0).
 - FIX: Fixed MS2ST() and US2ST() macros error (bug #415)(backported to 2.6.0,
   2.4.4, 2.2.10, NilRTOS).
+- NEW: Added support for STM32F0xx platform in RTCv2 driver.
+- NEW: Improvements to the STM32F4xx backup domain initialization.
+- NEW: Added initializer for the DIER register to the STM32 GPT, ICU and
+  PWM drivers.
+- NEW: Added support for 32bits counters to the STM32 GPT driver.
 - NEW: Added support for STM32F4xx backup RAM.
 - NEW: Added port support for SCP560B64.
 - NEW: Added DAC driver high level files and low level files templates.
@@ -118,6 +129,8 @@
 - NEW: SPI driver for SPC560Pxx, SPC563Mxx, SPC564Axx, SPC56ELAxx, SPC560Dxx.
 - NEW: Support for SPC560Dxx devices.
 - NEW: DMA-MUX support for SPC5xx devices.
+- CHANGE: Moved the STM32 GPT, ICU and PWM low level drivers under
+  ./os/hal/platform/STM32/TIMv1. Updated all the impacted project files.
 
 *** 2.5.2 ***
 - FIX: Fixed lwipthread.h should explicitly include lwip/opts.h (bug #414).

@@ -53,7 +53,6 @@ static void hal_lld_backup_domain_init(void) {
   /* Backup domain access enabled and left open.*/
   PWR->CR |= PWR_CR_DBP;
 
-#if HAL_USE_RTC
   /* Reset BKP domain if different clock source selected.*/
   if ((RCC->BDCR & STM32_RTCSEL_MASK) != STM32_RTCSEL) {
     /* Backup domain reset.*/
@@ -61,7 +60,13 @@ static void hal_lld_backup_domain_init(void) {
     RCC->BDCR = 0;
   }
 
-#if STM32_RTCSEL != STM32_RTCSEL_NOCLOCK
+#if STM32_LSE_ENABLED
+  RCC->BDCR |= RCC_BDCR_LSEON;
+  while ((RCC->BDCR & RCC_BDCR_LSERDY) == 0)
+    ;                                       /* Waits until LSE is stable.   */
+#endif
+
+#if HAL_USE_RTC
   /* If the backup domain hasn't been initialized yet then proceed with
      initialization.*/
   if ((RCC->BDCR & RCC_BDCR_RTCEN) == 0) {
@@ -71,7 +76,6 @@ static void hal_lld_backup_domain_init(void) {
     /* RTC clock enabled.*/
     RCC->BDCR |= RCC_BDCR_RTCEN;
   }
-#endif /* STM32_RTCSEL != STM32_RTCSEL_NOCLOCK */
 #endif /* HAL_USE_RTC */
 
 #if STM32_BKPRAM_ENABLE
@@ -182,32 +186,36 @@ void stm32_clock_init(void) {
     ;                           /* Waits until LSI is stable.               */
 #endif
 
-#if STM32_LSE_ENABLED
-  /* LSE activation, have to unlock the register.*/
-  if ((RCC->BDCR & RCC_BDCR_LSEON) == 0) {
-    PWR->CR |= PWR_CR_DBP;
-    RCC->BDCR |= RCC_BDCR_LSEON;
-    PWR->CR &= ~PWR_CR_DBP;
-  }
-  while ((RCC->BDCR & RCC_BDCR_LSERDY) == 0)
-    ;                           /* Waits until LSE is stable.               */
-#endif
-
 #if STM32_ACTIVATE_PLL
   /* PLL activation.*/
   RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC | STM32_PLLP | STM32_PLLN |
                  STM32_PLLM;
   RCC->CR |= RCC_CR_PLLON;
-  while (!(RCC->CR & RCC_CR_PLLRDY))
-    ;                           /* Waits until PLL is stable.               */
+
+#if STM32_OVERDRIVE_REQUIRED
+  /* Overdrive activation performed after activating the PLL in order to save
+     time as recommended in RM in "Entering Over-drive mode" paragraph.*/
+  PWR->CR |= PWR_CR_ODEN;
+  while (!(PWR->CSR & PWR_CSR_ODRDY)
+      ;
+  PWR->CR |= PWR_CR_ODSWEN;
+  while (!(PWR->CSR & PWR_CSR_ODSWRDY)
+      ;
 #endif
+
+  /* Waiting for PLL lock.*/
+  while (!(RCC->CR & RCC_CR_PLLRDY))
+    ;
+#endif /* STM32_OVERDRIVE_REQUIRED */
 
 #if STM32_ACTIVATE_PLLI2S
   /* PLLI2S activation.*/
   RCC->PLLI2SCFGR = STM32_PLLI2SR | STM32_PLLI2SN;
   RCC->CR |= RCC_CR_PLLI2SON;
+
+  /* Waiting for PLL lock.*/
   while (!(RCC->CR & RCC_CR_PLLI2SRDY))
-    ;                           /* Waits until PLLI2S is stable.            */
+    ;
 #endif
 
   /* Other clock-related settings (dividers, MCO etc).*/

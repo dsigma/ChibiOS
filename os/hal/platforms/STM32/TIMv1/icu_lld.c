@@ -112,20 +112,20 @@ static void icu_lld_serve_interrupt(ICUDriver *icup) {
   uint16_t sr;
 
   sr  = icup->tim->SR;
-  sr &= icup->tim->DIER;
+  sr &= icup->tim->DIER & STM32_TIM_DIER_IRQ_MASK;
   icup->tim->SR = ~sr;
   if (icup->config->channel == ICU_CHANNEL_1) {
-    if ((sr & TIM_SR_CC1IF) != 0)
+    if ((sr & STM32_TIM_SR_CC1IF) != 0)
       _icu_isr_invoke_period_cb(icup);
-    if ((sr & TIM_SR_CC2IF) != 0)
+    if ((sr & STM32_TIM_SR_CC2IF) != 0)
       _icu_isr_invoke_width_cb(icup);
   } else {
-    if ((sr & TIM_SR_CC1IF) != 0)
+    if ((sr & STM32_TIM_SR_CC1IF) != 0)
       _icu_isr_invoke_width_cb(icup);
-    if ((sr & TIM_SR_CC2IF) != 0)
+    if ((sr & STM32_TIM_SR_CC2IF) != 0)
       _icu_isr_invoke_period_cb(icup);
   }
-  if ((sr & TIM_SR_UIF) != 0)
+  if ((sr & STM32_TIM_SR_UIF) != 0)
     _icu_isr_invoke_overflow_cb(icup);
 }
 
@@ -468,7 +468,8 @@ void icu_lld_start(ICUDriver *icup) {
   else {
     /* Driver re-configuration scenario, it must be stopped first.*/
     icup->tim->CR1    = 0;                  /* Timer disabled.              */
-    icup->tim->DIER   = 0;                  /* All IRQs disabled.           */
+    icup->tim->DIER   = icup->config->dier &/* DMA-related DIER settings.   */
+                        ~STM32_TIM_DIER_IRQ_MASK;
     icup->tim->SR     = 0;                  /* Clear eventual pending IRQs. */
     icup->tim->CCR[0] = 0;                  /* Comparator 1 disabled.       */
     icup->tim->CCR[1] = 0;                  /* Comparator 2 disabled.       */
@@ -487,21 +488,22 @@ void icu_lld_start(ICUDriver *icup) {
     /* Selected input 1.
        CCMR1_CC1S = 01 = CH1 Input on TI1.
        CCMR1_CC2S = 10 = CH2 Input on TI1.*/
-    icup->tim->CCMR1 = TIM_CCMR1_CC1S_0 |
-                       TIM_CCMR1_CC2S_1;
+    icup->tim->CCMR1 = STM32_TIM_CCMR1_CC1S(1) | STM32_TIM_CCMR1_CC2S(2);
+
     /* SMCR_TS  = 101, input is TI1FP1.
        SMCR_SMS = 100, reset on rising edge.*/
-    icup->tim->SMCR  = TIM_SMCR_TS_2 | TIM_SMCR_TS_0 |
-                       TIM_SMCR_SMS_2;
+    icup->tim->SMCR  = STM32_TIM_SMCR_TS(5) | STM32_TIM_SMCR_SMS(4);
+
     /* The CCER settings depend on the selected trigger mode.
        ICU_INPUT_ACTIVE_HIGH: Active on rising edge, idle on falling edge.
        ICU_INPUT_ACTIVE_LOW:  Active on falling edge, idle on rising edge.*/
     if (icup->config->mode == ICU_INPUT_ACTIVE_HIGH)
-      icup->tim->CCER = TIM_CCER_CC1E |
-                        TIM_CCER_CC2E | TIM_CCER_CC2P;
+      icup->tim->CCER = STM32_TIM_CCER_CC1E |
+                        STM32_TIM_CCER_CC2E | STM32_TIM_CCER_CC2P;
     else
-      icup->tim->CCER = TIM_CCER_CC1E | TIM_CCER_CC1P |
-                        TIM_CCER_CC2E;
+      icup->tim->CCER = STM32_TIM_CCER_CC1E | STM32_TIM_CCER_CC1P |
+                        STM32_TIM_CCER_CC2E;
+
     /* Direct pointers to the capture registers in order to make reading
        data faster from within callbacks.*/
     icup->wccrp = &icup->tim->CCR[1];
@@ -510,21 +512,22 @@ void icu_lld_start(ICUDriver *icup) {
     /* Selected input 2.
        CCMR1_CC1S = 10 = CH1 Input on TI2.
        CCMR1_CC2S = 01 = CH2 Input on TI2.*/
-    icup->tim->CCMR1 = TIM_CCMR1_CC1S_1 |
-                       TIM_CCMR1_CC2S_0;
+    icup->tim->CCMR1 = STM32_TIM_CCMR1_CC1S(2) | STM32_TIM_CCMR1_CC2S(1);
+
     /* SMCR_TS  = 110, input is TI2FP2.
        SMCR_SMS = 100, reset on rising edge.*/
-    icup->tim->SMCR  = TIM_SMCR_TS_2 | TIM_SMCR_TS_1 |
-                       TIM_SMCR_SMS_2;
+    icup->tim->SMCR  = STM32_TIM_SMCR_TS(6) | STM32_TIM_SMCR_SMS(4);
+
     /* The CCER settings depend on the selected trigger mode.
        ICU_INPUT_ACTIVE_HIGH: Active on rising edge, idle on falling edge.
        ICU_INPUT_ACTIVE_LOW:  Active on falling edge, idle on rising edge.*/
     if (icup->config->mode == ICU_INPUT_ACTIVE_HIGH)
-      icup->tim->CCER = TIM_CCER_CC1E | TIM_CCER_CC1P |
-                        TIM_CCER_CC2E;
+      icup->tim->CCER = STM32_TIM_CCER_CC1E | STM32_TIM_CCER_CC1P |
+                        STM32_TIM_CCER_CC2E;
     else
-      icup->tim->CCER = TIM_CCER_CC1E |
-                        TIM_CCER_CC2E | TIM_CCER_CC2P;
+      icup->tim->CCER = STM32_TIM_CCER_CC1E |
+                        STM32_TIM_CCER_CC2E | STM32_TIM_CCER_CC2P;
+
     /* Direct pointers to the capture registers in order to make reading
        data faster from within callbacks.*/
     icup->wccrp = &icup->tim->CCR[0];
@@ -606,18 +609,18 @@ void icu_lld_enable(ICUDriver *icup) {
   icup->tim->SR = 0;                        /* Clear pending IRQs (if any). */
   if (icup->config->channel == ICU_CHANNEL_1) {
     if (icup->config->period_cb != NULL)
-      icup->tim->DIER |= TIM_DIER_CC1IE;
+      icup->tim->DIER |= STM32_TIM_DIER_CC1IE;
     if (icup->config->width_cb != NULL)
-      icup->tim->DIER |= TIM_DIER_CC2IE;
+      icup->tim->DIER |= STM32_TIM_DIER_CC2IE;
   } else {
     if (icup->config->width_cb != NULL)
-      icup->tim->DIER |= TIM_DIER_CC1IE;
+      icup->tim->DIER |= STM32_TIM_DIER_CC1IE;
     if (icup->config->period_cb != NULL)
-      icup->tim->DIER |= TIM_DIER_CC2IE;
+      icup->tim->DIER |= STM32_TIM_DIER_CC2IE;
   }
   if (icup->config->overflow_cb != NULL)
-    icup->tim->DIER |= TIM_DIER_UIE;
-  icup->tim->CR1  = TIM_CR1_URS | TIM_CR1_CEN;
+    icup->tim->DIER |= STM32_TIM_DIER_UIE;
+  icup->tim->CR1 = STM32_TIM_CR1_URS | STM32_TIM_CR1_CEN;
 }
 
 /**
@@ -629,9 +632,11 @@ void icu_lld_enable(ICUDriver *icup) {
  */
 void icu_lld_disable(ICUDriver *icup) {
 
-  icup->tim->CR1  = 0;                      /* Initially stopped.           */
-  icup->tim->SR   = 0;                      /* Clear pending IRQs (if any). */
-  icup->tim->DIER = 0;                      /* Interrupts disabled.         */
+  icup->tim->CR1   = 0;                     /* Initially stopped.           */
+  icup->tim->SR    = 0;                     /* Clear pending IRQs (if any). */
+
+  /* All interrupts disabled.*/
+  icup->tim->DIER &= ~STM32_TIM_DIER_IRQ_MASK;
 }
 
 #endif /* HAL_USE_ICU */

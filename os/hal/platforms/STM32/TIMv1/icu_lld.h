@@ -25,6 +25,8 @@
 #ifndef _ICU_LLD_H_
 #define _ICU_LLD_H_
 
+#include "stm32_tim.h"
+
 #if HAL_USE_ICU || defined(__DOXYGEN__)
 
 /*===========================================================================*/
@@ -289,6 +291,12 @@ typedef struct {
    * @note    Only inputs TIMx 1 and 2 are supported.
    */
   icuchannel_t              channel;
+  /**
+   * @brief TIM DIER register initialization data.
+   * @note  The value of this field should normally be equal to zero.
+   * @note  Only the DMA-related bits can be specified in this field.
+   */
+  uint32_t                  dier;
 } ICUConfig;
 
 /**
