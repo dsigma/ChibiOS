@@ -34,8 +34,6 @@
 #define CHPRINTF_USE_FLOAT          FALSE
 #endif
 
-#include <stdarg.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
