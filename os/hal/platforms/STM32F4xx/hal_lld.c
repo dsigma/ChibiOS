@@ -61,7 +61,13 @@ static void hal_lld_backup_domain_init(void) {
   }
 
 #if STM32_LSE_ENABLED
+#if defined(STM32_LSE_BYPASS)
+  /* LSE Bypass.*/
+  RCC->BDCR |= RCC_BDCR_LSEON | RCC_BDCR_LSEBYP;
+#else
+  /* No LSE Bypass.*/
   RCC->BDCR |= RCC_BDCR_LSEON;
+#endif
   while ((RCC->BDCR & RCC_BDCR_LSERDY) == 0)
     ;                                       /* Waits until LSE is stable.   */
 #endif
@@ -154,17 +160,19 @@ void stm32_clock_init(void) {
   /* PWR initialization.*/
 #if defined(STM32F4XX) || defined(__DOXYGEN__)
   PWR->CR = STM32_VOS;
-  while ((PWR->CSR & PWR_CSR_VOSRDY) == 0)
-    ;                           /* Waits until power regulator is stable.   */
 #else
   PWR->CR = 0;
 #endif
 
-  /* Initial clocks setup and wait for HSI stabilization, the MSI clock is
-     always enabled because it is the fallback clock when PLL the fails.*/
-  RCC->CR |= RCC_CR_HSION;
-  while ((RCC->CR & RCC_CR_HSIRDY) == 0)
-    ;                           /* Waits until HSI is stable.               */
+  /* HSI setup, it enforces the reset situation in order to handle possible
+     problems with JTAG probes and re-initializations.*/
+  RCC->CR |= RCC_CR_HSION;                  /* Make sure HSI is ON.         */
+  while (!(RCC->CR & RCC_CR_HSIRDY))
+    ;                                       /* Wait until HSI is stable.    */
+  RCC->CR &= RCC_CR_HSITRIM | RCC_CR_HSION; /* CR Reset value.              */
+  RCC->CFGR = 0;                            /* CFGR reset value.            */
+  while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
+    ;                                       /* Waits until HSI is selected. */
 
 #if STM32_HSE_ENABLED
   /* HSE activation.*/
@@ -192,16 +200,22 @@ void stm32_clock_init(void) {
                  STM32_PLLM;
   RCC->CR |= RCC_CR_PLLON;
 
+  /* Synchronization with voltage regulator stabilization.*/
+#if defined(STM32F4XX)
+  while ((PWR->CSR & PWR_CSR_VOSRDY) == 0)
+    ;                           /* Waits until power regulator is stable.   */
+
 #if STM32_OVERDRIVE_REQUIRED
   /* Overdrive activation performed after activating the PLL in order to save
      time as recommended in RM in "Entering Over-drive mode" paragraph.*/
   PWR->CR |= PWR_CR_ODEN;
-  while (!(PWR->CSR & PWR_CSR_ODRDY)
+  while (!(PWR->CSR & PWR_CSR_ODRDY))
       ;
   PWR->CR |= PWR_CR_ODSWEN;
-  while (!(PWR->CSR & PWR_CSR_ODSWRDY)
+  while (!(PWR->CSR & PWR_CSR_ODSWRDY))
       ;
-#endif
+#endif /* STM32_OVERDRIVE_REQUIRED */
+#endif /* defined(STM32F4XX) */
 
   /* Waiting for PLL lock.*/
   while (!(RCC->CR & RCC_CR_PLLRDY))
@@ -219,8 +233,8 @@ void stm32_clock_init(void) {
 #endif
 
   /* Other clock-related settings (dividers, MCO etc).*/
-  RCC->CFGR |= STM32_MCO2PRE | STM32_MCO2SEL | STM32_MCO1PRE | STM32_MCO1SEL |
-               STM32_RTCPRE | STM32_PPRE2 | STM32_PPRE1 | STM32_HPRE;
+  RCC->CFGR = STM32_MCO2PRE | STM32_MCO2SEL | STM32_MCO1PRE | STM32_MCO1SEL |
+              STM32_RTCPRE | STM32_PPRE2 | STM32_PPRE1 | STM32_HPRE;
 
   /* Flash setup.*/
 #if defined(STM32_USE_REVISION_A_FIX)

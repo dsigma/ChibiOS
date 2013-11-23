@@ -89,6 +89,20 @@
 *****************************************************************************
 
 *** 2.7.0 ***
+- FIX: Fixed lost incoming characters in STM32 USARTv1 driver (bug #442)
+  (backported to 2.4.6 and 2.6.2).
+- FIX: Fixed UART4/5-related bugs in STM32 USARTv1 UART driver (bug #440)
+  (backported to 2.6.2).
+- FIX: Fixed race condition in STM32 DMA interrupt (bug #439)(backported
+  to 2.6.2).
+- FIX: Fixed STM32 OTG-FS wrong upper memory limit (bug #437)(backported
+  to 2.6.2).
+- FIX: Fixed timing issue in the STM32 OTGv1 USB driver (bug #436)(backported
+  to 2.6.2).
+- FIX: Fixed STM32L1 remove reset flag (bug #435)(backported to 2.6.2).
+- FIX: Fixed add RTC to STM32L1 (bug #433)(backported to 2.6.2).
+- FIX: Fixed support 10-bit addresses in STM32 I2C driver (bug #432)
+  (backported to 2.6.2).
 - FIX: Fixed possible unalignment in GCC Cortex-M scatter files (bug #430)
   (backported to 2.6.2 and 2.4.6).
 - FIX: Fixed PAL driver documentation error (bug #427)(backported to 2.6.1
@@ -116,6 +130,12 @@
   (backported to 2.6.0).
 - FIX: Fixed MS2ST() and US2ST() macros error (bug #415)(backported to 2.6.0,
   2.4.4, 2.2.10, NilRTOS).
+- NEW: Added chvprintf() function to the chprintf module.
+- NEW: Improved time range check in the kernel, new API chTimeElapsedSince()
+  introduced. The API chTimeIsWithin() is now a macro.
+- NEW: Added a new function shellExit() to the shell. It allows to exit the
+  shell from any command handler.
+- NEW: Added support for STM32F401/STM32F42x/STM32F43x devices.
 - NEW: Added support for STM32F0xx platform in RTCv2 driver.
 - NEW: Improvements to the STM32F4xx backup domain initialization.
 - NEW: Added initializer for the DIER register to the STM32 GPT, ICU and
@@ -124,7 +144,7 @@
 - NEW: Added support for STM32F4xx backup RAM.
 - NEW: Added port support for SCP560B64.
 - NEW: Added DAC driver high level files and low level files templates.
-- NEW: Added support of UART4 and UART5 (STM32F4x and STM32F2x platforms)
+- NEW: Added support of UART4 and UART5 (STM32F4xx and STM32F2xx platforms)
   (feature request #28).
 - NEW: SPI driver for SPC560Pxx, SPC563Mxx, SPC564Axx, SPC56ELAxx, SPC560Dxx.
 - NEW: Support for SPC560Dxx devices.

@@ -13,8 +13,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+
 /*
-   Concepts and parts of this file have been contributed by Fabio Utzig.
+   Concepts and parts of this file have been contributed by Fabio Utzig,
+   chvprintf() added by Brent Roman.
  */
 
 /**
@@ -24,8 +26,6 @@
  * @addtogroup chprintf
  * @{
  */
-
-
 
 #include "ch.h"
 #include "chprintf.h"
@@ -94,7 +94,7 @@ static char *ftoa(char *p, double num, const unsigned long precision_param) {
 
 /**
  * @brief   System formatted output function.
- * @details This function implements a minimal @p printf() like functionality
+ * @details This function implements a minimal @p vprintf()-like functionality
  *          with output on a @p BaseSequentialStream.
  *          The general parameters format is: %[-][width|*][.precision|*][l|L]p.
  *          The following parameter types (p) are supported:
@@ -113,19 +113,9 @@ static char *ftoa(char *p, double num, const unsigned long precision_param) {
  *
  * @param[in] chp       pointer to a @p BaseSequentialStream implementing object
  * @param[in] fmt       formatting string
- */
-void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
-  va_list ap;
-  va_start(ap,fmt);
-  chvprintf(chp, fmt, ap);
-  va_end(ap);
-}
-
-/**
- * @brief Same as chprintf, except takes a va_list instead of ...
+ * @param[in] ap        list of parameters
  *
- * @param[in] chp       pointer to a @p BaseSequentialStream implementing object
- * @param[in] fmt       formatting string
+ * @api
  */
 void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
   char *p, *s, c, filler;
@@ -141,9 +131,8 @@ void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
 
   while (TRUE) {
     c = *fmt++;
-    if (c == 0) {
+    if (c == 0)
       return;
-    }
     if (c != '%') {
       chSequentialStreamPut(chp, (uint8_t)c);
       continue;

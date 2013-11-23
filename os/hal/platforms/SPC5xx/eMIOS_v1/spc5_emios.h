@@ -25,7 +25,7 @@
 #ifndef _SPC5_EMIOS_H_
 #define _SPC5_EMIOS_H_
 
-#if HAL_USE_ICU || defined(__DOXYGEN__)
+#if HAL_USE_ICU || HAL_USE_PWM || defined(__DOXYGEN__)
 
 /*===========================================================================*/
 /* Driver constants.                                                         */
@@ -156,17 +156,31 @@ void increase_emios0_active_channels(void);
 void decrease_emios0_active_channels(void);
 void active_emios0_clock(ICUDriver *icup, PWMDriver *pwmp);
 void deactive_emios0_clock(ICUDriver *icup, PWMDriver *pwmp);
+#if HAL_USE_ICU
+void icu_active_emios0_clock(ICUDriver *icup);
+void icu_deactive_emios0_clock(ICUDriver *icup);
+#endif
+#if HAL_USE_PWM
+void pwm_active_emios0_clock(PWMDriver *pwmp);
+void pwm_deactive_emios0_clock(PWMDriver *pwmp);
+#endif
 #endif
 #if SPC5_HAS_EMIOS1
 void reset_emios1_active_channels(void);
 uint32_t get_emios1_active_channels(void);
 void increase_emios1_active_channels(void);
 void decrease_emios1_active_channels(void);
-void active_emios1_clock(ICUDriver *icup, PWMDriver *pwmp);
-void deactive_emios1_clock(ICUDriver *icup, PWMDriver *pwmp);
+#if HAL_USE_ICU
+void icu_active_emios1_clock(ICUDriver *icup);
+void icu_deactive_emios1_clock(ICUDriver *icup);
+#endif
+#if HAL_USE_PWM
+void pwm_active_emios1_clock(PWMDriver *pwmp);
+void pwm_deactive_emios1_clock(PWMDriver *pwmp);
+#endif
 #endif
 
-#endif /* HAL_USE_ICU */
+#endif /* HAL_USE_ICU || HAL_USE_PWM */
 
 #endif /* _SPC5_EMIOS_H_ */
 
