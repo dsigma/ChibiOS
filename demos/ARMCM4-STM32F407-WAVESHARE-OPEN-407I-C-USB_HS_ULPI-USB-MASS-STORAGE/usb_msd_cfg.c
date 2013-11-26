@@ -52,17 +52,17 @@ static const USBDescriptor msd_device_descriptor = {
   msd_device_descriptor_data
 };
 
-/* Configuration Descriptor tree for a CDC.*/
+/* Configuration Descriptor tree*/
 static const uint8_t msd_configuration_descriptor_data[] = {
   /* Configuration Descriptor.*/
-  USB_DESC_CONFIGURATION(0x0020,            /* wTotalLength.                    */
+  USB_DESC_CONFIGURATION(0x0020,        /* wTotalLength.                    */
                          0x01,          /* bNumInterfaces.                  */
                          0x01,          /* bConfigurationValue.             */
                          0,             /* iConfiguration.                  */
                          0xC0,          /* bmAttributes (self powered).     */
-                         0x32),           /* bMaxPower (100mA).               */
+                         0x32),         /* bMaxPower (100mA).               */
   /* Interface Descriptor.*/
-  USB_DESC_INTERFACE    (0x00,          /* bInterfaceNumber.                */
+  USB_DESC_INTERFACE    (USB_MSD_INTERFACE_NUMBER,          /* bInterfaceNumber.                */
                          0x00,          /* bAlternateSetting.               */
                          0x02,          /* bNumEndpoints.                   */
                          0x08,          /* bInterfaceClass (Mass Storage)   */
@@ -119,7 +119,7 @@ static const uint8_t msd_string2[] = {
   'C', 0, 'h', 0, 'i', 0, 'b', 0, 'i', 0, 'O', 0, 'S', 0, '/', 0,
   'R', 0, 'T', 0, ' ', 0, 'M', 0, 'a', 0, 's', 0, 's', 0, ' ', 0,
   'S', 0, 't', 0, 'o', 0, 'r', 0, 'a', 0, 'g', 0, 'e', 0, ' ', 0,
-  'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e'
+  'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e', 0
 };
 
 static const uint8_t msd_string3[] = {
@@ -178,8 +178,8 @@ static USBOutEndpointState ep1OutState;
 static const USBEndpointConfig epDataConfig = {
   USB_EP_MODE_TYPE_BULK,
   NULL,
-  msdUsbEvent,
-  msdUsbEvent,
+  msdBulkInCallbackComplete,
+  msdBulkOutCallbackComplete,
   USB_MS_EP_SIZE,
   USB_MS_EP_SIZE,
   &ep1InState,
@@ -204,7 +204,7 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
     chSysLockFromIsr();
     msdp->reconfigured_or_reset_event = TRUE;
     usbInitEndpointI(usbp, msdp->ms_ep_number, &epDataConfig);
-    /* Initialize the thread */
+    /* Kick-start the thread */
     chBSemSignalI(&msdp->bsem);
 
     /* signal that the device is connected */

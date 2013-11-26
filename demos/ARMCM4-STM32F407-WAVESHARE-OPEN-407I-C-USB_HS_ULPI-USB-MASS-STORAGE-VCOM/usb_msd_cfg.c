@@ -169,7 +169,7 @@ static const uint8_t msd_configuration_descriptor_data[] = {
 
     /* Mass Storage Device */
     /* Interface Descriptor. */
-    USB_DESC_INTERFACE    (0x02,          /* bInterfaceNumber.                */
+    USB_DESC_INTERFACE    (USB_MSD_INTERFACE_NUMBER,          /* bInterfaceNumber.                */
              0x00,          /* bAlternateSetting.               */
              0x02,          /* bNumEndpoints.                   */
              MASS_STORAGE_INTERFACE_CLASS,          /* bInterfaceClass (Mass Storage)   */
@@ -228,7 +228,7 @@ static const uint8_t msd_string2[] = {
   'C', 0, 'h', 0, 'i', 0, 'b', 0, 'i', 0, 'O', 0, 'S', 0, '/', 0,
   'R', 0, 'T', 0, ' ', 0, 'M', 0, 'a', 0, 's', 0, 's', 0, ' ', 0,
   'S', 0, 't', 0, 'o', 0, 'r', 0, 'a', 0, 'g', 0, 'e', 0, ' ', 0,
-  'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e'
+  'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e', 0
 };
 
 static const uint8_t msd_string3[] = {
@@ -291,8 +291,8 @@ static USBOutEndpointState epMSOutState;
 static const USBEndpointConfig epDataConfig = {
   USB_EP_MODE_TYPE_BULK,
   NULL,
-  msdUsbEvent,
-  msdUsbEvent,
+  msdBulkInCallbackComplete,
+  msdBulkOutCallbackComplete,
   USB_MS_EP_SIZE,
   USB_MS_EP_SIZE,
   &epMSInState,
@@ -397,7 +397,8 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
 
 bool_t msdCdcRequestsHook(USBDriver *usbp) {
   bool_t r;
-  r = msdRequestsHook(usbp);
+  USBMassStorageDriver *msdp = (USBMassStorageDriver *)usbp->in_params[USB_MS_DATA_EP - 1];
+  r = msdRequestsHook2(usbp, msdp);
   if (r) {
     return (r);
   }

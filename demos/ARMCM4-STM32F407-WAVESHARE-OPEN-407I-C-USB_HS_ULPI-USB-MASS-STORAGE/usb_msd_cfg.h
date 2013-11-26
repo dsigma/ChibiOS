@@ -22,7 +22,8 @@
 #define USB_MSD_CFG_H_
 
 
-#define USB_MS_DATA_EP 1
+#define USB_MS_DATA_EP                1
+#define USB_MSD_INTERFACE_NUMBER   0x00
 
 
 #endif /* USB_MSD_CFG_H_ */

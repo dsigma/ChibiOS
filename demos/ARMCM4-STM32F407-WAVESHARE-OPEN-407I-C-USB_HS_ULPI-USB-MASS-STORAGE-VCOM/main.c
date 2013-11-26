@@ -130,7 +130,7 @@ int main(void) {
   sdcConnect(&SDCD1);
 
   chprintf(chp, "setting up MSD\r\n");
-  const usb_msd_driver_state_t msd_driver_state = msdInit(usb_driver, (BaseBlockDevice*)&SDCD1, &UMSD1, USB_MS_DATA_EP);
+  const usb_msd_driver_state_t msd_driver_state = msdInit(usb_driver, (BaseBlockDevice*)&SDCD1, &UMSD1, USB_MS_DATA_EP, USB_MSD_INTERFACE_NUMBER);
   if( msd_driver_state != USB_MSD_DRIVER_OK ) {
     chprintf(chp, "Error initing USB MSD, %d %s\r\n", msd_driver_state, usb_msd_driver_state_t_to_str(msd_driver_state));
   }

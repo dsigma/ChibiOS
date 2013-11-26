@@ -55,17 +55,20 @@
 #define MSD_SETUP_INDEX(setup) MSD_SETUP_WORD(setup, 4)
 #define MSD_SETUP_LENGTH(setup) MSD_SETUP_WORD(setup, 6)
 
+#define SCSI_CMD_TEST_UNIT_READY                0x00
+#define SCSI_CMD_REQUEST_SENSE                  0x03
 #define SCSI_CMD_INQUIRY 						0x12
-#define SCSI_CMD_REQUEST_SENSE 					0x03
+#define SCSI_CMD_MODE_SENSE_6                   0x1A
+#define SCSI_CMD_START_STOP_UNIT                0x1B
+#define SCSI_CMD_SEND_DIAGNOSTIC                0x1D
+#define SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL   0x1E
+#define SCSI_CMD_READ_FORMAT_CAPACITY           0x23
 #define SCSI_CMD_READ_CAPACITY_10				0x25
 #define SCSI_CMD_READ_10 						0x28
 #define SCSI_CMD_WRITE_10						0x2A
-#define SCSI_CMD_TEST_UNIT_READY				0x00
-#define SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL	0x1E
 #define SCSI_CMD_VERIFY_10						0x2F
-#define SCSI_CMD_SEND_DIAGNOSTIC				0x1D
-#define SCSI_CMD_MODE_SENSE_6                   0x1A
-#define SCSI_CMD_START_STOP_UNIT				0x1B
+
+
 
 #define MSD_COMMAND_PASSED 0x00
 #define MSD_COMMAND_FAILED 0x01
@@ -85,6 +88,7 @@
 #define SCSI_SENSE_KEY_ABORTED_COMMAND          0x0B
 #define SCSI_SENSE_KEY_VOLUME_OVERFLOW          0x0D
 #define SCSI_SENSE_KEY_MISCOMPARE               0x0E
+
 #define SCSI_ASENSE_NO_ADDITIONAL_INFORMATION   0x00
 #define SCSI_ASENSE_LOGICAL_UNIT_NOT_READY      0x04
 #define SCSI_ASENSE_INVALID_FIELD_IN_CDB        0x24
@@ -94,6 +98,7 @@
 #define SCSI_ASENSE_INVALID_COMMAND             0x20
 #define SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE 0x21
 #define SCSI_ASENSE_MEDIUM_NOT_PRESENT                 0x3A
+
 #define SCSI_ASENSEQ_NO_QUALIFIER                      0x00
 #define SCSI_ASENSEQ_FORMAT_COMMAND_FAILED             0x01
 #define SCSI_ASENSEQ_INITIALIZING_COMMAND_REQUIRED     0x02
@@ -137,6 +142,12 @@ PACK_STRUCT_BEGIN typedef struct
 } PACK_STRUCT_STRUCT scsi_inquiry_response_t PACK_STRUCT_END;
 
 PACK_STRUCT_BEGIN typedef struct {
+    uint8_t payload_byte_length[4];
+    uint32_t last_block_addr;
+    uint32_t block_size;
+} PACK_STRUCT_STRUCT SCSIReadFormatCapacityResponse_t PACK_STRUCT_END;
+
+PACK_STRUCT_BEGIN typedef struct {
 	uint32_t last_block_addr;
 	uint32_t block_size;
 } PACK_STRUCT_STRUCT SCSIReadCapacity10Response_t PACK_STRUCT_END;
@@ -151,6 +162,12 @@ PACK_STRUCT_BEGIN typedef struct {
 } PACK_STRUCT_STRUCT SCSIStartStopUnitRequest_t;
 
 typedef struct USBMassStorageDriver USBMassStorageDriver;
+
+typedef enum {
+  MSD_WAIT_MODE_NONE = 0,
+  MSD_WAIT_MODE_BULK_IN,
+  MSD_WAIT_MODE_BULK_OUT
+} msd_wait_mode_t;
 
 typedef enum {
   MSD_STATE_IDLE = 0,
@@ -168,6 +185,10 @@ typedef enum {
 struct USBMassStorageDriver {
 	USBDriver                 *usbp;
 	BinarySemaphore bsem;
+	volatile uint32_t wait_bulk_in_isr_counter;
+	volatile uint32_t wait_bulk_out_isr_counter;
+
+
 	BinarySemaphore usb_transfer_thread_bsem;
 	BinarySemaphore mass_sorage_thd_bsem;
 	BaseBlockDevice *bbdp;
@@ -179,15 +200,19 @@ struct USBMassStorageDriver {
 	msd_csw_t csw;
 	scsi_sense_response_t sense;
 	bool_t result;
+	bool_t command_succeeded_flag;
 	bool_t reconfigured_or_reset_event;
 	uint32_t trigger_transfer_index;
     usbep_t  ms_ep_number;
+    uint16_t msd_interface_number;
 
     bool_t (*enable_msd_callback)(void);
     bool_t disable_usb_bus_disconnect_on_eject;
 
     uint32_t read_error_count;
     uint32_t write_error_count;
+
+
 
     BaseSequentialStream *chp; /*For debug logging*/
 };
@@ -196,10 +221,13 @@ struct USBMassStorageDriver {
 #ifdef __cplusplus
 extern "C" {
 #endif
-usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp, const usbep_t  ms_ep_number);
+usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp, const usbep_t ms_ep_number, const uint16_t msd_interface_number);
 usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp);
-void msdUsbEvent(USBDriver *usbp, usbep_t ep);
+//void msdUsbEvent(USBDriver *usbp, usbep_t ep);
+void msdBulkInCallbackComplete(USBDriver *usbp, usbep_t ep);
+void msdBulkOutCallbackComplete(USBDriver *usbp, usbep_t ep);
 bool_t msdRequestsHook(USBDriver *usbp);
+bool_t msdRequestsHook2(USBDriver *usbp, USBMassStorageDriver *msdp);
 const char* usb_msd_driver_state_t_to_str(const usb_msd_driver_state_t driver_state);
 #ifdef __cplusplus
 }
