@@ -907,6 +907,8 @@ static msd_wait_mode_t SCSICommandPreventAllowMediumRemovial(USBMassStorageDrive
     if( msdp->enable_media_removial ) {
       //this can have positive performance
       msdp->command_succeeded_flag = false;
+      SCSISetSense(msdp, SCSI_SENSE_KEY_ILLEGAL_REQUEST,
+          SCSI_ASENSE_INVALID_COMMAND, SCSI_ASENSEQ_NO_QUALIFIER);
     }
   }
 
