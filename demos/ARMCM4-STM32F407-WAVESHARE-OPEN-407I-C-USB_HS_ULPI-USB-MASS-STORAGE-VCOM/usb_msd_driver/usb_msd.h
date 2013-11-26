@@ -199,8 +199,15 @@ struct USBMassStorageDriver {
 	msd_cbw_t cbw;
 	msd_csw_t csw;
 	scsi_sense_response_t sense;
-	bool_t result;
+
+	//command handling status flags
+	bool_t result_unused;//FIXME this can be removed
 	bool_t command_succeeded_flag;
+	bool_t stall_in_endpoint;
+	bool_t stall_out_endpoint;
+	bool_t set_default_sense_key_unused;//FIXME this can be removed
+
+
 	bool_t reconfigured_or_reset_event;
 	uint32_t trigger_transfer_index;
     usbep_t  ms_ep_number;
@@ -212,8 +219,7 @@ struct USBMassStorageDriver {
     uint32_t read_error_count;
     uint32_t write_error_count;
 
-
-
+    bool_t enable_media_removial;
     BaseSequentialStream *chp; /*For debug logging*/
 };
 
