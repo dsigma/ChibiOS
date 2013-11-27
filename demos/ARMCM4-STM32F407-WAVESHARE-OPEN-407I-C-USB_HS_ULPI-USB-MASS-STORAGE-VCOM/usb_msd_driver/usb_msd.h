@@ -201,12 +201,9 @@ struct USBMassStorageDriver {
 	scsi_sense_response_t sense;
 
 	//command handling status flags
-	bool_t result_unused;//FIXME this can be removed
 	bool_t command_succeeded_flag;
 	bool_t stall_in_endpoint;
 	bool_t stall_out_endpoint;
-	bool_t set_default_sense_key_unused;//FIXME this can be removed
-
 
 	bool_t reconfigured_or_reset_event;
 	uint32_t trigger_transfer_index;
