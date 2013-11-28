@@ -43,8 +43,10 @@
 
 //#define MSD_DEBUG   FALSE
 #define MSD_DEBUG   (palReadPad(GPIOI, GPIOI_PIN4))
+
 #define msd_debug_print(chp_arg, args ...) if (MSD_DEBUG && chp_arg != NULL ) { chprintf(chp_arg, args); }
 #define msd_debug_err_print(chp_arg, args ...) if ( chp_arg != NULL ) { chprintf(chp_arg, args); }
+
 
 #if !defined(MSD_RW_LED_ON)
 #define MSD_RW_LED_ON()
@@ -52,6 +54,22 @@
 
 #if !defined(MSD_RW_LED_OFF)
 #define MSD_RW_LED_OFF()
+#endif
+
+#if !defined(MSD_R_LED_ON)
+#define MSD_R_LED_ON()
+#endif
+
+#if !defined(MSD_R_LED_OFF)
+#define MSD_R_LED_OFF()
+#endif
+
+#if !defined(MSD_W_LED_ON)
+#define MSD_W_LED_ON()
+#endif
+
+#if !defined(MSD_W_LED_OFF)
+#define MSD_W_LED_OFF()
 #endif
 
 
@@ -81,8 +99,15 @@ static void msdSetDefaultSenseKey(USBMassStorageDriver *msdp);
 #define BLOCK_SIZE_INCREMENT                 512
 #define BLOCK_WRITE_ITTERATION_COUNT         32
 
+typedef enum {
+  MSD_USB_TRANSFER_STATUS_RUNNING = 0,
+  MSD_USB_TRANSFER_STATUS_DONE_SUCCESSFUL,
+  MSD_USB_TRANSFER_STATUS_DONE_FAILED,
+} msd_usb_transfer_status_t;
+
 typedef struct {
-  uint8_t is_transfer_done;
+  //uint8_t is_transfer_done;
+  msd_usb_transfer_status_t transfer_status;
   /*Number of blocks actually read from USB IN endpoint that should be written to SD card*/
   int num_blocks_to_write;
   /*Number of blocks to read from USB IN endpoint*/
@@ -116,6 +141,14 @@ inline uint16_t swap_2byte_buffer(uint8_t *buff) {
   return(swap_uint16(temp));
 }
 
+/**
+ * @brief USB Event handler calback
+ *
+ * @param[in] usbp      pointer to the @p USBDriver object
+ * @param[in] ep        USB Endpoint Number
+ *
+ * @api
+ */
 void msdBulkInCallbackComplete(USBDriver *usbp, usbep_t ep) {
   (void)usbp;
   (void)ep;
@@ -134,6 +167,14 @@ void msdBulkInCallbackComplete(USBDriver *usbp, usbep_t ep) {
   }
 }
 
+/**
+ * @brief USB Event handler calback
+ *
+ * @param[in] usbp      pointer to the @p USBDriver object
+ * @param[in] ep        USB Endpoint Number
+ *
+ * @api
+ */
 void msdBulkOutCallbackComplete(USBDriver *usbp, usbep_t ep) {
   (void)usbp;
   (void)ep;
@@ -258,42 +299,6 @@ usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp) {
 
   return(msdp->driver_state);
 }
-
-/**
- * @brief USB Event handler calback
- *
- * @param[in] usbp      pointer to the @p USBDriver object
- * @param[in] ep        USB Endpoint Number
- *
- * @api
- */
-#if 0
-void msdUsbEvent(USBDriver *usbp, usbep_t ep) {
-  (void)usbp;
-  (void)ep;
-
-  if (ep > 0 && usbp->in_params[ep - 1] != NULL) {
-    USBMassStorageDriver *msdp = (USBMassStorageDriver *)usbp->in_params[ep - 1];
-
-    chSysLockFromIsr();
-    chBSemSignalI(&(msdp->bsem));
-    msdp->interupt_counter++;
-
-    if (msdp->wait_for_command_block_isr_counter == 0) {
-      msdp->wait_for_command_block_isr_counter = 1;
-    }
-
-    if (msdp->wait_general_isr_counter == 0) {
-      msdp->wait_general_isr_counter = 1;
-    }
-    if (msdp->wait_ping_pong_isr_counter == 0) {
-      msdp->wait_ping_pong_isr_counter = 1;
-    }
-
-    chSysUnlockFromIsr();
-  }
-}
-#endif
 
 
 /**
@@ -434,15 +439,17 @@ static uint8_t WaitForISR(USBMassStorageDriver *msdp, const bool_t check_reset, 
 
 static void WaitForUSBTransferComplete(USBMassStorageDriver *msdp,
                                        const int ping_pong_buffer_index) {
+  msd_debug_err_print(msdp->chp, "A");
   while (TRUE) {
     chBSemWaitTimeout(&msdp->mass_sorage_thd_bsem, MS2ST(1));
 
-    if (rw_ping_pong_buffer[ping_pong_buffer_index].is_transfer_done) {
+    if (rw_ping_pong_buffer[ping_pong_buffer_index].transfer_status != MSD_USB_TRANSFER_STATUS_RUNNING) {
       break;
     } else {
-      chThdSleepMilliseconds(1);
+      //chThdSleepMilliseconds(1);
     }
   }
+  msd_debug_err_print(msdp->chp, "a");
 }
 
 
@@ -578,13 +585,15 @@ static msd_wait_mode_t SCSICommandSendDiagnostic(USBMassStorageDriver *msdp) {
 
 static void SCSIWriteTransferPingPong(USBMassStorageDriver *msdp,
                                       volatile rw_usb_sd_buffer_t *dest_buffer) {
+  msd_debug_err_print(msdp->chp, "B");
   int cnt;
-  dest_buffer->is_transfer_done = FALSE;
+  dest_buffer->transfer_status = MSD_USB_TRANSFER_STATUS_RUNNING;
   dest_buffer->num_blocks_to_write = 0;
 
 #if MSD_ENABLE_PERF_DEBUG_GPIOS
   palSetPad(GPIOH, GPIOH_LED2);
 #endif
+
   for (cnt = 0;
       cnt < BLOCK_WRITE_ITTERATION_COUNT
           && cnt < dest_buffer->max_blocks_to_read; cnt++) {
@@ -597,13 +606,23 @@ static void SCSIWriteTransferPingPong(USBMassStorageDriver *msdp,
     usbStartReceiveI(msdp->usbp, msdp->ms_ep_number);
     chSysUnlock();
 
+    chThdSleepMicroseconds(100);//FIXME: for some reason if you dont sleep here then we miss the very last bulk out transfer, and that gets used as the CSW, which is totally invalid
+    //while (usbGetReceiveStatusI(msdp->usbp, msdp->ms_ep_number)) {
+    //  chThdYield();
+    //}
     WaitForISR(msdp, FALSE, MSD_WAIT_MODE_BULK_OUT);
+
+
     dest_buffer->num_blocks_to_write++;
   }
-  dest_buffer->is_transfer_done = TRUE;
+  dest_buffer->transfer_status = MSD_USB_TRANSFER_STATUS_DONE_SUCCESSFUL;
+  //FIXME we need to handle setting the status to error if somthing failed, like a usb reset or somthing
+
 #if MSD_ENABLE_PERF_DEBUG_GPIOS
   palClearPad(GPIOH, GPIOH_LED2);
 #endif
+
+  msd_debug_err_print(msdp->chp, "b");
 }
 
 
@@ -626,10 +645,12 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
     return MSD_WAIT_MODE_NONE;
   }
 
-  uint32_t rw_block_address = swap_4byte_buffer(&cbw->scsi_cmd_data[2]);
-  const uint16_t total_blocks = swap_2byte_buffer(&cbw->scsi_cmd_data[7]);
-  //uint32_t rw_block_address = swap_uint32(*(uint32_t *)&cbw->scsi_cmd_data[2]);
-  //const uint16_t total_blocks = swap_uint16(*(uint16_t *)&cbw->scsi_cmd_data[7]);
+  //FIXME, which of these?
+  //uint32_t rw_block_address = swap_4byte_buffer(&cbw->scsi_cmd_data[2]);
+  //const uint16_t total_blocks = swap_2byte_buffer(&cbw->scsi_cmd_data[7]);
+  uint32_t rw_block_address = swap_uint32(*(uint32_t *)&cbw->scsi_cmd_data[2]);
+  const uint16_t total_blocks = swap_uint16(*(uint16_t *)&cbw->scsi_cmd_data[7]);
+  const uint32_t rw_block_address_origional = rw_block_address;
   uint16_t i = 0;
 
   if (rw_block_address >= msdp->block_dev_info.blk_num) {
@@ -645,21 +666,21 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
     return MSD_WAIT_MODE_NONE;
   }
 
+  /*initialized ping pong buffer*/
   for (i = 0; i < 2; i++) {
-    /*initialized ping pong buffer*/
     rw_ping_pong_buffer[i].max_blocks_to_read = 0;
     rw_ping_pong_buffer[i].num_blocks_to_write = 0;
-    rw_ping_pong_buffer[i].is_transfer_done = FALSE;
+    rw_ping_pong_buffer[i].transfer_status = MSD_USB_TRANSFER_STATUS_RUNNING;
   }
 
+  msd_debug_err_print(msdp->chp, "\r\nG");
   if (cbw->scsi_cmd_data[0] == SCSI_CMD_WRITE_10) {
     /* loop over each block */
 
-    int ping_pong_buffer_index = 0;
+    uint32_t ping_pong_buffer_index = 0;
     /*initiate a transfer*/
-    rw_ping_pong_buffer[ping_pong_buffer_index].is_transfer_done = FALSE;
-    rw_ping_pong_buffer[ping_pong_buffer_index].max_blocks_to_read =
-        total_blocks;
+    rw_ping_pong_buffer[ping_pong_buffer_index].transfer_status = MSD_USB_TRANSFER_STATUS_RUNNING;
+    rw_ping_pong_buffer[ping_pong_buffer_index].max_blocks_to_read = total_blocks;
 
     /*Trigger the transfer in the other thread*/
     msdp->trigger_transfer_index = ping_pong_buffer_index;
@@ -674,16 +695,15 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
       const int empty_buffer_index = ((ping_pong_buffer_index + 1) % 2);
 
       /*initiate another transfer in the other ping pong buffer*/
-      int queue_another_transfer = FALSE;
-      if ((i + BLOCK_WRITE_ITTERATION_COUNT) < total_blocks) {
-        queue_another_transfer = TRUE;
-      }
+      //const bool_t queue_another_transfer = ((i + BLOCK_WRITE_ITTERATION_COUNT) < total_blocks);
+      const bool_t queue_another_transfer = ((i + rw_ping_pong_buffer[done_buffer_index].num_blocks_to_write) < total_blocks);
 
+      msd_debug_err_print(msdp->chp, "D");
       if (queue_another_transfer) {
         while (TRUE) {
           if (msdp->trigger_transfer_index == UINT32_MAX) {
             rw_ping_pong_buffer[empty_buffer_index].max_blocks_to_read =
-                total_blocks - i - BLOCK_WRITE_ITTERATION_COUNT;
+                total_blocks - i - rw_ping_pong_buffer[done_buffer_index].num_blocks_to_write;
 
             msdp->trigger_transfer_index = empty_buffer_index;
 
@@ -695,6 +715,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
           }
         }
       }
+      msd_debug_err_print(msdp->chp, "d");
 
       if (rw_ping_pong_buffer[done_buffer_index].num_blocks_to_write <= 0) {
         /*This should never happen!!! Something is seriously wrong!*/
@@ -705,12 +726,13 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
       }
 
       /* now write the block to the block device */
+      MSD_W_LED_ON();
+      msd_debug_err_print(msdp->chp, "E");
       if (blkWrite(msdp->bbdp, rw_block_address,
           (uint8_t*)rw_ping_pong_buffer[done_buffer_index].buf,
           rw_ping_pong_buffer[done_buffer_index].num_blocks_to_write)
           == CH_FAILED) {
-        msd_debug_err_print(msdp->chp, "\r\nSD Block Write Error, halting\r\n");
-
+        msd_debug_err_print(msdp->chp, "\r\nSD Block Write Error\r\n");
         chThdSleepMilliseconds(50);
         msdp->write_error_count++;
 
@@ -725,21 +747,35 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
           WaitForUSBTransferComplete(msdp, empty_buffer_index);
         }
 
+        MSD_W_LED_OFF();
         return (MSD_WAIT_MODE_NONE);
       }
-      rw_block_address +=
-          rw_ping_pong_buffer[done_buffer_index].num_blocks_to_write;
+      msd_debug_err_print(msdp->chp, "e");
+      MSD_W_LED_OFF();
+
+      rw_block_address += rw_ping_pong_buffer[done_buffer_index].num_blocks_to_write;
       i += rw_ping_pong_buffer[done_buffer_index].num_blocks_to_write;
-      rw_ping_pong_buffer[done_buffer_index].is_transfer_done = FALSE;
+      rw_ping_pong_buffer[done_buffer_index].transfer_status = MSD_USB_TRANSFER_STATUS_RUNNING;
       rw_ping_pong_buffer[done_buffer_index].num_blocks_to_write = 0;
 
+      msd_debug_err_print(msdp->chp, "F");
       if (queue_another_transfer) {
+        if( !( i< total_blocks) ) {
+          msd_debug_err_print(msdp->chp, "\r\nERROR: Queued another transfer but not going to rx the data\r\n");
+        }
         WaitForUSBTransferComplete(msdp, empty_buffer_index);
       }
+      msd_debug_err_print(msdp->chp, "f");
 
       /*Swap the ping pong buffers*/
       ping_pong_buffer_index = empty_buffer_index;
     }
+
+    if( i != total_blocks ) {
+      msd_debug_err_print(msdp->chp, "\r\ni!=total_blocks, %u, %u\r\n", i, total_blocks);
+    }
+
+    msd_debug_err_print(msdp->chp, "(%u,%u,%u)", rw_block_address_origional, total_blocks, i);
 
   } else {
     i = 0;
@@ -751,18 +787,16 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
         msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error\r\n");
         msdp->read_error_count++;
       } else {
+        if( retry_count > 0 ) {
+          msd_debug_err_print(msdp->chp, "Successful Block Read Retry\r\n");
+        }
         read_success = TRUE;
         break;
       }
     }
 
-    static bool_t did_one_error_flag = false;
-    bool_t force_error_flag = palReadPad(GPIOI, GPIOI_PIN6);
 
-
-    if ((!read_success) || (!did_one_error_flag && force_error_flag) ) {
-      did_one_error_flag = true;
-
+    if ((!read_success) ) {
       msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error 1, breaking read sequence\r\n");
 
       /*wait for printing to finish*/
@@ -802,6 +836,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
         /* there is at least one more block to be read from device */
         /* so read that while the USB transfer takes place */
         read_success = FALSE;
+        MSD_R_LED_ON();
         for (retry_count = 0; retry_count < 3; retry_count++) {
           if (blkRead(msdp->bbdp, rw_block_address, read_buffer[(i+1) % 2], 1)
               == CH_FAILED) {
@@ -809,10 +844,14 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
 
             msdp->read_error_count++;
           } else {
+            if( retry_count > 0 ) {
+              msd_debug_err_print(msdp->chp, "Successful Block Read Retry\r\n");
+            }
             read_success = TRUE;
             break;
           }
         }
+        MSD_R_LED_OFF();
 
         if ((!read_success)) {
           msd_debug_err_print(
@@ -833,11 +872,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
           return MSD_WAIT_MODE_NONE;
         }
 
-
-
         rw_block_address++;
-
-
       }
 
       /*FIXME In the event that the USB connection is unplugged while we're waiting for a bulk
@@ -849,9 +884,9 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
         //fixme are we handling the reset case properly
         return MSD_WAIT_MODE_NONE;
       }
-
     }
   }
+  msd_debug_err_print(msdp->chp, "g");
 
   /* don't wait for ISR */
   return MSD_WAIT_MODE_NONE;
@@ -940,126 +975,121 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
   /* by default transition back to the idle state */
   msdp->state = MSD_STATE_IDLE;
 
+  msd_debug_print(msdp->chp, " CMD 0x%X\r\n", cbw->scsi_cmd_data[0]);
+  msdp->command_succeeded_flag = true;
+  msdp->stall_in_endpoint = false;
+  msdp->stall_out_endpoint = false;
+  msd_wait_mode_t wait_mode = MSD_WAIT_MODE_NONE;
+
+
   /* check the command */
   if ((cbw->signature != MSD_CBW_SIGNATURE) || (cbw->lun > 0)
       || ((cbw->data_len > 0) && (cbw->flags & 0x1F))
       || (cbw->scsi_cmd_len == 0) || (cbw->scsi_cmd_len > 16)) {
 
-    msd_debug_err_print(msdp->chp, "Bad CB\r\n");
+    msd_debug_err_print(msdp->chp, "Bad CB, sig=0x%X, lun=0x%X, data_len=0x%X, flags=0x%X, scsi_cmd_len=0x%X\r\n", cbw->signature, cbw->lun, cbw->data_len, cbw->flags, cbw->scsi_cmd_len);
     /* stall both IN and OUT endpoints */
+    msdp->stall_out_endpoint = true;
+    msdp->stall_in_endpoint = true;
+    msdp->command_succeeded_flag = false;
+    SCSISetSense(msdp, SCSI_SENSE_KEY_ILLEGAL_REQUEST,
+                 SCSI_ASENSE_INVALID_FIELD_IN_CDB, SCSI_ASENSEQ_NO_QUALIFIER);
+
+#if 0
     chSysLock();
+    msdp->wait_bulk_out_isr_counter = 0;
     usbStallReceiveI(msdp->usbp, msdp->ms_ep_number);
     //usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
     chSysUnlock();
 
+    //wait for the host to clear the stall
+    WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_OUT);
+
     /* don't wait for ISR */
     return MSD_WAIT_MODE_NONE;
+#endif
   }
 
-  msd_debug_print(msdp->chp, " CMD 0x%X\r\n", cbw->scsi_cmd_data[0]);
-  msdp->command_succeeded_flag = true;
-  msdp->stall_in_endpoint = false;
-  msdp->stall_out_endpoint = false;
 
-  msd_wait_mode_t wait_mode = MSD_WAIT_MODE_NONE;
-  switch (cbw->scsi_cmd_data[0]) {
-    case SCSI_CMD_INQUIRY:
-      msd_debug_print(msdp->chp, "CMD_INQ\r\n");
-      wait_mode = SCSICommandInquiry(msdp);
-      break;
-    case SCSI_CMD_REQUEST_SENSE:
-      msd_debug_print(msdp->chp, "\r\nCMD_RS\r\n");
-      wait_mode = SCSICommandRequestSense(msdp);
-      break;
-    case SCSI_CMD_READ_FORMAT_CAPACITY:
-      msd_debug_print(msdp->chp, "CMD_RFC\r\n");
-      wait_mode = SCSICommandReadFormatCapacity(msdp);
-      break;
-    case SCSI_CMD_READ_CAPACITY_10:
-      msd_debug_print(msdp->chp, "CMD_RC10\r\n");
-      wait_mode = SCSICommandReadCapacity10(msdp);
-      break;
-    case SCSI_CMD_READ_10:
-    case SCSI_CMD_WRITE_10:
-      msd_debug_print(msdp->chp, "CMD_RW\r\n");
-      MSD_RW_LED_ON();
-      wait_mode = SCSICommandStartReadWrite10(msdp);
-      MSD_RW_LED_OFF();
-      break;
-    case SCSI_CMD_SEND_DIAGNOSTIC:
-      msd_debug_print(msdp->chp, "CMD_DIA\r\n");
-      wait_mode = SCSICommandSendDiagnostic(msdp);
-      break;
-    case SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
-      msd_debug_print(msdp->chp, "CMD_PAMR\r\n");
-      wait_mode = SCSICommandPreventAllowMediumRemovial(msdp);
-      break;
-    case SCSI_CMD_TEST_UNIT_READY:
-    case SCSI_CMD_VERIFY_10:
-      msd_debug_print(msdp->chp, "CMD_00_1E_2F\r\n");
-      /* don't handle */
-      break;
-    case SCSI_CMD_MODE_SENSE_6:
-      msd_debug_print(msdp->chp, "\r\nCMD_S6\r\n");
-      wait_mode = SCSICommandModeSense6(msdp);
-      break;
-    case SCSI_CMD_START_STOP_UNIT:
-      msd_debug_print(msdp->chp, "CMD_STOP\r\n");
-      wait_mode = SCSICommandStartStopUnit(msdp);
-      break;
-    default:
-      msd_debug_err_print(msdp->chp, "CMD default 0x%X\r\n", cbw->scsi_cmd_data[0]);
-      msdp->command_succeeded_flag = false;
-      SCSISetSense(msdp, SCSI_SENSE_KEY_ILLEGAL_REQUEST,
-                   SCSI_ASENSE_INVALID_COMMAND, SCSI_ASENSEQ_NO_QUALIFIER);
+  if( msdp->command_succeeded_flag ) {
+    switch (cbw->scsi_cmd_data[0]) {
+      case SCSI_CMD_INQUIRY:
+        msd_debug_print(msdp->chp, "CMD_INQ\r\n");
+        wait_mode = SCSICommandInquiry(msdp);
+        break;
+      case SCSI_CMD_REQUEST_SENSE:
+        msd_debug_print(msdp->chp, "\r\nCMD_RS\r\n");
+        wait_mode = SCSICommandRequestSense(msdp);
+        break;
+      case SCSI_CMD_READ_FORMAT_CAPACITY:
+        msd_debug_print(msdp->chp, "CMD_RFC\r\n");
+        wait_mode = SCSICommandReadFormatCapacity(msdp);
+        break;
+      case SCSI_CMD_READ_CAPACITY_10:
+        msd_debug_print(msdp->chp, "CMD_RC10\r\n");
+        wait_mode = SCSICommandReadCapacity10(msdp);
+        break;
+      case SCSI_CMD_READ_10:
+      case SCSI_CMD_WRITE_10:
+        msd_debug_print(msdp->chp, "CMD_RW\r\n");
+        MSD_RW_LED_ON();
+        wait_mode = SCSICommandStartReadWrite10(msdp);
+        MSD_RW_LED_OFF();
+        break;
+      case SCSI_CMD_SEND_DIAGNOSTIC:
+        msd_debug_print(msdp->chp, "CMD_DIA\r\n");
+        wait_mode = SCSICommandSendDiagnostic(msdp);
+        break;
+      case SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
+        msd_debug_print(msdp->chp, "CMD_PAMR\r\n");
+        wait_mode = SCSICommandPreventAllowMediumRemovial(msdp);
+        break;
+      case SCSI_CMD_TEST_UNIT_READY:
+      case SCSI_CMD_VERIFY_10:
+        msd_debug_print(msdp->chp, "CMD_00_1E_2F\r\n");
+        /* don't handle */
+        break;
+      case SCSI_CMD_MODE_SENSE_6:
+        msd_debug_print(msdp->chp, "\r\nCMD_S6\r\n");
+        wait_mode = SCSICommandModeSense6(msdp);
+        break;
+      case SCSI_CMD_START_STOP_UNIT:
+        msd_debug_print(msdp->chp, "CMD_STOP\r\n");
+        wait_mode = SCSICommandStartStopUnit(msdp);
+        break;
+      default:
+        msd_debug_err_print(msdp->chp, "CMD default 0x%X\r\n", cbw->scsi_cmd_data[0]);
+        msdp->command_succeeded_flag = false;
+        SCSISetSense(msdp, SCSI_SENSE_KEY_ILLEGAL_REQUEST,
+                     SCSI_ASENSE_INVALID_COMMAND, SCSI_ASENSEQ_NO_QUALIFIER);
 
-      /* stall IN endpoint */
-      chSysLock()
-      msdp->wait_bulk_in_isr_counter = 0;
-      usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
-      chSysUnlock()
+        /* stall IN endpoint */
+        chSysLock()
+        msdp->wait_bulk_in_isr_counter = 0;
+        usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
+        chSysUnlock()
 
-      WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);
+        WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);
 
-      cbw->data_len = 0;
-      return MSD_WAIT_MODE_NONE;
+        cbw->data_len = 0;
+        return MSD_WAIT_MODE_NONE;
+    }
   }
 
   cbw->data_len = 0;
 
-#if 0
-  if (msdp->result) {
-    /* update sense with success status */
-    msdSetDefaultSenseKey(msdp);
-  } else {
-    msd_debug_err_print(msdp->chp, "stalling IN endpoint\r\n");
-    /* stall IN endpoint */
-    chSysLock();
-    usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
-    chSysUnlock();
-
-    cbw->data_len = 0;
-    return MSD_WAIT_MODE_NONE;
-  }
-#endif
-
-#if 0
-  if( msdp->set_default_sense_key ) {
-    /* update sense with success status */
-    msdSetDefaultSenseKey(msdp);
-  }
-#endif
 
   if( msdp->stall_in_endpoint || msdp->stall_out_endpoint ) {
     /* stall IN endpoint */
     chSysLock();
     if( msdp->stall_in_endpoint ) {
       msd_debug_err_print(msdp->chp, "stalling IN endpoint\r\n");
-      msdp->wait_bulk_in_isr_counter;
+      msdp->wait_bulk_in_isr_counter = 0;
       usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
     }
     if( msdp->stall_out_endpoint ) {
       msd_debug_err_print(msdp->chp, "stalling OUT endpoint\r\n");
+      msdp->wait_bulk_out_isr_counter = 0;
       usbStallReceiveI(msdp->usbp, msdp->ms_ep_number);
     }
     chSysUnlock();
@@ -1068,14 +1098,23 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
       WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);
     }
 
+    if( msdp->stall_out_endpoint ) {
+      WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_OUT);
+    }
+
     cbw->data_len = 0;
   }
 
+
   if (wait_mode != MSD_WAIT_MODE_NONE ) {
+    msd_debug_err_print(msdp->chp, "H");
     if (WaitForISR(msdp, TRUE, wait_mode) == WAIT_ISR_BUSS_RESET_OR_RECONNECT) {
+      msd_debug_err_print(msdp->chp, "h");
       return (MSD_WAIT_MODE_NONE);
     }
+    msd_debug_err_print(msdp->chp, "h");
   }
+
 
   msd_csw_t *csw = &(msdp->csw);
 
@@ -1097,22 +1136,24 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
   csw->data_residue = cbw->data_len;
   csw->tag = cbw->tag;
 
+  msd_debug_err_print(msdp->chp, "I");
   usbPrepareTransmit(msdp->usbp, msdp->ms_ep_number, (uint8_t *)csw,
                      sizeof(msd_csw_t));
 
   chSysLock();
-  //msdp->wait_bulk_out_isr_counter = 0;
-  //msdWaitForCommandBlock(msdp);
+  msdp->wait_bulk_out_isr_counter = 0;
+  msdWaitForCommandBlock(msdp);
 
   msdp->wait_bulk_in_isr_counter = 0;
   usbStartTransmitI(msdp->usbp, msdp->ms_ep_number);
   chSysUnlock();
+  msd_debug_err_print(msdp->chp, "i");
 
-  //WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);//wait for our status to be sent back
+  WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);//wait for our status to be sent back
 
   /* wait on ISR */
-  return MSD_WAIT_MODE_BULK_IN;
-  //return MSD_WAIT_MODE_BULK_OUT;
+  //return MSD_WAIT_MODE_BULK_IN;
+  return MSD_WAIT_MODE_BULK_OUT;
 }
 
 
@@ -1214,12 +1255,14 @@ static msg_t MassStorageThd(void *arg) {
       }
     }
 
+    msd_debug_err_print(msdp->chp, "J");
    if (wait_for_isr && (!msdp->reconfigured_or_reset_event)) {
       /* wait until the ISR wakes thread */
       msd_debug_print(msdp->chp, "W%d,%d", wait_for_isr, msdp->state);
       WaitForISR(msdp, TRUE, wait_for_isr);
       msd_debug_print(msdp->chp, "w\r\n");
     }
+   msd_debug_err_print(msdp->chp, "j");
   }
 
   return 0;

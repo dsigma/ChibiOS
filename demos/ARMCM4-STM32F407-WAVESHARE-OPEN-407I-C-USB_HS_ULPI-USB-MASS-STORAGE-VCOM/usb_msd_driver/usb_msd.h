@@ -33,6 +33,10 @@
 
 #define MSD_RW_LED_ON()   palSetPad(GPIOI, GPIOI_LED4)
 #define MSD_RW_LED_OFF()  palClearPad(GPIOI, GPIOI_LED4)
+#define MSD_R_LED_ON()   palSetPad(GPIOI, GPIOI_LED3)
+#define MSD_R_LED_OFF()  palClearPad(GPIOI, GPIOI_LED3)
+#define MSD_W_LED_ON()   palSetPad(GPIOH, GPIOH_LED2)
+#define MSD_W_LED_OFF()  palClearPad(GPIOH, GPIOH_LED2)
 
 
 #if STM32_USB_USE_OTG2 && STM32_USE_USB_OTG2_HS
