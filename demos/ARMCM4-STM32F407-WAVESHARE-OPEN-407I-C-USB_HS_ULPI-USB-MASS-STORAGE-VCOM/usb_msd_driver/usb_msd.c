@@ -644,7 +644,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
     msd_debug_err_print(msdp->chp, "\r\nWrite Protected!\r\n");
     /* device is write protected and a write has been issued */
     /* Block address is invalid, update SENSE key and return command fail */
-    SCSISetSense(msdp, SCSI_SENSE_KEY_DATA_PROTECT, SCSI_ASENSE_WRITE_PROTECTED,
+    SCSISetSense(msdp, SCSI_SENSE_KEY_NOT_READY, SCSI_ASENSE_WRITE_PROTECTED,
                  SCSI_ASENSEQ_NO_QUALIFIER);
 
     msdp->command_succeeded_flag = false;
@@ -663,7 +663,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
   if (rw_block_address >= msdp->block_dev_info.blk_num) {
     msd_debug_err_print(msdp->chp, "\r\nBlock Address too large %u > %u\r\n", rw_block_address, msdp->block_dev_info.blk_num);
     /* Block address is invalid, update SENSE key and return command fail */
-    SCSISetSense(msdp, SCSI_SENSE_KEY_DATA_PROTECT, SCSI_ASENSE_WRITE_PROTECTED,
+    SCSISetSense(msdp, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE,
                  SCSI_ASENSEQ_NO_QUALIFIER);
 
     msdp->command_succeeded_flag = false;
@@ -746,7 +746,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
         msdp->command_succeeded_flag = false;
         msdp->stall_out_endpoint = true;
         SCSISetSense(msdp, SCSI_SENSE_KEY_MEDIUM_ERROR,
-                     SCSI_ASENSE_NO_ADDITIONAL_INFORMATION,
+                     SCSI_ASENSE_PEREPHERIAL_DEVICE_WRITE_FAULT,
                      SCSI_ASENSEQ_NO_QUALIFIER);
 
         if (queue_another_transfer) {
@@ -816,7 +816,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
             msdp->chp, "\r\nSetting sense code %u\r\n", SCSI_SENSE_KEY_MEDIUM_ERROR);
 
       SCSISetSense(msdp, SCSI_SENSE_KEY_MEDIUM_ERROR,
-                   SCSI_ASENSE_NO_ADDITIONAL_INFORMATION,
+                   SCSI_ASENSE_UNRECOVERED_READ_ERROR,
                    SCSI_ASENSEQ_NO_QUALIFIER);
 
       return MSD_WAIT_MODE_NONE;
@@ -871,7 +871,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
                 msdp->chp, "\r\nSetting sense code %u\r\n", SCSI_SENSE_KEY_MEDIUM_ERROR);
 
           SCSISetSense(msdp, SCSI_SENSE_KEY_MEDIUM_ERROR,
-                       SCSI_ASENSE_NO_ADDITIONAL_INFORMATION,
+                       SCSI_ASENSE_UNRECOVERED_READ_ERROR,
                        SCSI_ASENSEQ_NO_QUALIFIER);
           return MSD_WAIT_MODE_NONE;
         }
@@ -932,6 +932,9 @@ static msd_wait_mode_t SCSICommandPreventAllowMediumRemovial(USBMassStorageDrive
 
 
 static msd_wait_mode_t SCSICommandModeSense6(USBMassStorageDriver *msdp) {
+
+  //FIXME check for unsupported mode page set sense code, see page 161(144) of USB Mass storage book
+
   static scsi_mode_sense6_response_t response;
   memset(&response, 0, sizeof(response));
   response.mode_data_length = 3;
@@ -1104,8 +1107,6 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
     if( msdp->stall_out_endpoint ) {
       WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_OUT);
     }
-
-    cbw->data_len = 0;
   }
 
 
@@ -1121,18 +1122,6 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
 
   msd_csw_t *csw = &(msdp->csw);
 
-#if 0
-  if ((!msdp->result) && cbw->data_len) {
-    msd_debug_err_print(msdp->chp, "stalling in and out endpoints\r\n");
-    /* still bytes left to send, this is too early to send CSW? */
-    chSysLock();
-    usbStallReceiveI(msdp->usbp, msdp->ms_ep_number);
-    usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
-    chSysUnlock();
-
-    return MSD_WAIT_MODE_NONE;
-  }
-#endif
 
   csw->status = (msdp->command_succeeded_flag) ? MSD_COMMAND_PASSED : MSD_COMMAND_FAILED;
   csw->signature = MSD_CSW_SIGNATURE;

@@ -76,40 +76,41 @@ typedef enum {
 
 
 
+#define MSD_COMMAND_PASSED                               0x00
+#define MSD_COMMAND_FAILED                               0x01
+#define MSD_COMMAND_PHASE_ERROR                          0x02
 
-#define MSD_COMMAND_PASSED 0x00
-#define MSD_COMMAND_FAILED 0x01
-#define MSD_COMMAND_PHASE_ERROR 0x02
+#define SCSI_SENSE_KEY_GOOD                              0x00
+#define SCSI_SENSE_KEY_RECOVERED_ERROR                   0x01
+#define SCSI_SENSE_KEY_NOT_READY                         0x02
+#define SCSI_SENSE_KEY_MEDIUM_ERROR                      0x03
+#define SCSI_SENSE_KEY_HARDWARE_ERROR                    0x04
+#define SCSI_SENSE_KEY_ILLEGAL_REQUEST                   0x05
+#define SCSI_SENSE_KEY_UNIT_ATTENTION                    0x06
+#define SCSI_SENSE_KEY_DATA_PROTECT                      0x07
+#define SCSI_SENSE_KEY_BLANK_CHECK                       0x08
+#define SCSI_SENSE_KEY_VENDOR_SPECIFIC                   0x09
+#define SCSI_SENSE_KEY_COPY_ABORTED                      0x0A
+#define SCSI_SENSE_KEY_ABORTED_COMMAND                   0x0B
+#define SCSI_SENSE_KEY_VOLUME_OVERFLOW                   0x0D
+#define SCSI_SENSE_KEY_MISCOMPARE                        0x0E
 
-#define SCSI_SENSE_KEY_GOOD                     0x00
-#define SCSI_SENSE_KEY_RECOVERED_ERROR          0x01
-#define SCSI_SENSE_KEY_NOT_READY                0x02
-#define SCSI_SENSE_KEY_MEDIUM_ERROR             0x03
-#define SCSI_SENSE_KEY_HARDWARE_ERROR           0x04
-#define SCSI_SENSE_KEY_ILLEGAL_REQUEST          0x05
-#define SCSI_SENSE_KEY_UNIT_ATTENTION           0x06
-#define SCSI_SENSE_KEY_DATA_PROTECT             0x07
-#define SCSI_SENSE_KEY_BLANK_CHECK              0x08
-#define SCSI_SENSE_KEY_VENDOR_SPECIFIC          0x09
-#define SCSI_SENSE_KEY_COPY_ABORTED             0x0A
-#define SCSI_SENSE_KEY_ABORTED_COMMAND          0x0B
-#define SCSI_SENSE_KEY_VOLUME_OVERFLOW          0x0D
-#define SCSI_SENSE_KEY_MISCOMPARE               0x0E
+#define SCSI_ASENSE_NO_ADDITIONAL_INFORMATION            0x00
+#define SCSI_ASENSE_PEREPHERIAL_DEVICE_WRITE_FAULT       0x03
+#define SCSI_ASENSE_LOGICAL_UNIT_NOT_READY               0x04
+#define SCSI_ASENSE_UNRECOVERED_READ_ERROR               0x11
+#define SCSI_ASENSE_INVALID_COMMAND                      0x20
+#define SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE   0x21
+#define SCSI_ASENSE_INVALID_FIELD_IN_CDB                 0x24
+#define SCSI_ASENSE_WRITE_PROTECTED                      0x27
+#define SCSI_ASENSE_NOT_READY_TO_READY_CHANGE            0x28
+#define SCSI_ASENSE_FORMAT_ERROR                         0x31
+#define SCSI_ASENSE_MEDIUM_NOT_PRESENT                   0x3A
 
-#define SCSI_ASENSE_NO_ADDITIONAL_INFORMATION   0x00
-#define SCSI_ASENSE_LOGICAL_UNIT_NOT_READY      0x04
-#define SCSI_ASENSE_INVALID_FIELD_IN_CDB        0x24
-#define SCSI_ASENSE_NOT_READY_TO_READY_CHANGE   0x28
-#define SCSI_ASENSE_WRITE_PROTECTED             0x27
-#define SCSI_ASENSE_FORMAT_ERROR                0x31
-#define SCSI_ASENSE_INVALID_COMMAND             0x20
-#define SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE 0x21
-#define SCSI_ASENSE_MEDIUM_NOT_PRESENT                 0x3A
-
-#define SCSI_ASENSEQ_NO_QUALIFIER                      0x00
-#define SCSI_ASENSEQ_FORMAT_COMMAND_FAILED             0x01
-#define SCSI_ASENSEQ_INITIALIZING_COMMAND_REQUIRED     0x02
-#define SCSI_ASENSEQ_OPERATION_IN_PROGRESS             0x07
+#define SCSI_ASENSEQ_NO_QUALIFIER                        0x00
+#define SCSI_ASENSEQ_FORMAT_COMMAND_FAILED               0x01
+#define SCSI_ASENSEQ_INITIALIZING_COMMAND_REQUIRED       0x02
+#define SCSI_ASENSEQ_OPERATION_IN_PROGRESS               0x07
 
 
 PACK_STRUCT_BEGIN typedef struct {
@@ -175,7 +176,7 @@ PACK_STRUCT_BEGIN typedef struct {
 	uint8_t control;
 } PACK_STRUCT_STRUCT SCSIStartStopUnitRequest_t;
 
-typedef struct USBMassStorageDriver USBMassStorageDriver;
+
 
 typedef enum {
   MSD_WAIT_MODE_NONE = 0,
@@ -196,42 +197,48 @@ typedef enum {
   USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY,
 } usb_msd_driver_state_t;
 
+typedef struct USBMassStorageDriver USBMassStorageDriver;
+
 struct USBMassStorageDriver {
+    /* Driver Setup Data */
 	USBDriver                 *usbp;
-	BinarySemaphore bsem;
-	volatile uint32_t wait_bulk_in_isr_counter;
-	volatile uint32_t wait_bulk_out_isr_counter;
-
-
-	BinarySemaphore usb_transfer_thread_bsem;
-	BinarySemaphore mass_sorage_thd_bsem;
 	BaseBlockDevice *bbdp;
-	EventSource evt_connected, evt_ejected;
+	EventSource evt_connected;
+	EventSource evt_ejected;
 	BlockDeviceInfo block_dev_info;
 	usb_msd_driver_state_t driver_state;
-	msd_state_t state;
-	msd_cbw_t cbw;
-	msd_csw_t csw;
-	scsi_sense_response_t sense;
-
-	//command handling status flags
-	bool_t command_succeeded_flag;
-	bool_t stall_in_endpoint;
-	bool_t stall_out_endpoint;
-
-	bool_t reconfigured_or_reset_event;
-	uint32_t trigger_transfer_index;
     usbep_t  ms_ep_number;
     uint16_t msd_interface_number;
-
     bool_t (*enable_msd_callback)(void);
-    bool_t disable_usb_bus_disconnect_on_eject;
 
+    /* Externally modifiable settings */
+    bool_t enable_media_removial;
+    bool_t disable_usb_bus_disconnect_on_eject;
+    BaseSequentialStream *chp; /*For debug logging*/
+
+    /* Externally readable values */
     uint32_t read_error_count;
     uint32_t write_error_count;
 
-    bool_t enable_media_removial;
-    BaseSequentialStream *chp; /*For debug logging*/
+    /*Internal data for operation of the driver */
+    BinarySemaphore bsem;
+    BinarySemaphore usb_transfer_thread_bsem;
+    BinarySemaphore mass_sorage_thd_bsem;
+    volatile uint32_t trigger_transfer_index;
+
+    volatile uint32_t wait_bulk_in_isr_counter;
+    volatile uint32_t wait_bulk_out_isr_counter;
+
+    msd_state_t state;
+    msd_cbw_t cbw;
+    msd_csw_t csw;
+    scsi_sense_response_t sense;
+
+    volatile bool_t reconfigured_or_reset_event;
+
+    bool_t command_succeeded_flag;
+    bool_t stall_in_endpoint;
+    bool_t stall_out_endpoint;
 };
 
 
