@@ -480,7 +480,6 @@ static void WaitForUSBTransferComplete(USBMassStorageDriver *msdp,
 
 /* SCSI Functions */
 
-
 static inline void SCSISetSense(USBMassStorageDriver *msdp, uint8_t key,
                                 uint8_t acode, uint8_t aqual) {
   msdp->sense.byte[2] = key;
@@ -1016,12 +1015,12 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
 
 
   if( msdp->command_succeeded_flag ) {
-    switch (cbw->scsi_cmd_data[0]) {
+    switch ( (msd_scsi_command_t) cbw->scsi_cmd_data[0] ) {
       case SCSI_CMD_INQUIRY:
         msd_debug_print(msdp->chp, "CMD_INQ\r\n");
         wait_mode = SCSICommandInquiry(msdp);
         break;
-      case SCSI_CMD_REQUEST_SENSE:
+      case SCSI_CMD_REQUEST_SENSE_6:
         msd_debug_print(msdp->chp, "\r\nCMD_RS\r\n");
         wait_mode = SCSICommandRequestSense(msdp);
         break;

@@ -59,18 +59,21 @@
 #define MSD_SETUP_INDEX(setup) MSD_SETUP_WORD(setup, 4)
 #define MSD_SETUP_LENGTH(setup) MSD_SETUP_WORD(setup, 6)
 
-#define SCSI_CMD_TEST_UNIT_READY                0x00
-#define SCSI_CMD_REQUEST_SENSE                  0x03
-#define SCSI_CMD_INQUIRY 						0x12
-#define SCSI_CMD_MODE_SENSE_6                   0x1A
-#define SCSI_CMD_START_STOP_UNIT                0x1B
-#define SCSI_CMD_SEND_DIAGNOSTIC                0x1D
-#define SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL   0x1E
-#define SCSI_CMD_READ_FORMAT_CAPACITY           0x23
-#define SCSI_CMD_READ_CAPACITY_10				0x25
-#define SCSI_CMD_READ_10 						0x28
-#define SCSI_CMD_WRITE_10						0x2A
-#define SCSI_CMD_VERIFY_10						0x2F
+typedef enum {
+    SCSI_CMD_TEST_UNIT_READY                = 0x00,
+    SCSI_CMD_REQUEST_SENSE_6                = 0x03,
+    SCSI_CMD_INQUIRY                        = 0x12,
+    SCSI_CMD_MODE_SENSE_6                   = 0x1A,
+    SCSI_CMD_START_STOP_UNIT                = 0x1B,
+    SCSI_CMD_SEND_DIAGNOSTIC                = 0x1D,
+    SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL   = 0x1E,
+    SCSI_CMD_READ_FORMAT_CAPACITY           = 0x23,
+    SCSI_CMD_READ_CAPACITY_10               = 0x25,
+    SCSI_CMD_READ_10                        = 0x28,
+    SCSI_CMD_WRITE_10                       = 0x2A,
+    SCSI_CMD_VERIFY_10                      = 0x2F,
+} msd_scsi_command_t;
+
 
 
 
