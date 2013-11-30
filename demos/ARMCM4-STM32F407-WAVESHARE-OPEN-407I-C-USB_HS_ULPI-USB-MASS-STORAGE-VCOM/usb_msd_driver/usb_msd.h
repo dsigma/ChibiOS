@@ -130,6 +130,13 @@ typedef struct {
 		uint8_t byte[18];
 } PACK_STRUCT_STRUCT scsi_sense_response_t;
 
+typedef struct {
+  uint8_t mode_data_length; //Number of bytes that follow
+  uint8_t medium_type; //0x00 for SBC devices
+  uint8_t device_specifc_paramters; //bit 7 is the write protect bit
+  uint8_t block_descriptor_length; //Length in bytes of all block descriptors in the mode parameter list.
+} PACK_STRUCT_STRUCT scsi_mode_sense6_response_t;
+
 PACK_STRUCT_BEGIN typedef struct
 {
 	uint8_t peripheral;
@@ -230,7 +237,6 @@ extern "C" {
 #endif
 usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp, const usbep_t ms_ep_number, const uint16_t msd_interface_number);
 usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp);
-//void msdUsbEvent(USBDriver *usbp, usbep_t ep);
 void msdBulkInCallbackComplete(USBDriver *usbp, usbep_t ep);
 void msdBulkOutCallbackComplete(USBDriver *usbp, usbep_t ep);
 bool_t msdRequestsHook(USBDriver *usbp);
