@@ -774,6 +774,11 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
     msd_debug_nest_print(msdp->chp, "(%u,%u,%u)", rw_block_address_origional, total_blocks, i);
 
   } else {
+    /* FIXME: For some reason, when doing a blkRead on a SanDisk 8g sd card, it takes 2.5ms to read a block, limiting
+     * max read performance to about 200k/s. However, when using an 8g transcend SD card, we can get up to 2.0 megabytes/sec
+     * read through put. What's the difference? configuration for the SD driver?
+     */
+
     i = 0;
     /* read the first block from block device */
     read_success = FALSE;
