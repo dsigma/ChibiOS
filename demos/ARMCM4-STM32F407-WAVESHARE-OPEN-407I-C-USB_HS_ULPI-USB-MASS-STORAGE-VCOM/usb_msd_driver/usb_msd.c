@@ -94,6 +94,7 @@ static Thread *msdUSBTransferThd = NULL;
 
 #define WAIT_ISR_SUCCESS                     0
 #define WAIT_ISR_BUSS_RESET_OR_RECONNECT     1
+
 static uint8_t msdWaitForISR(USBMassStorageDriver *msdp, const bool_t check_reset, const msd_wait_mode_t wait_mode);
 static void msdSetDefaultSenseKey(USBMassStorageDriver *msdp);
 
@@ -246,14 +247,12 @@ usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassSt
   chBSemInit(&msdp->usb_transfer_thread_bsem, FALSE);
   chBSemInit(&msdp->mass_sorage_thd_bsem, FALSE);
 
-  /* Initialize sense values to zero */
-  for (i = 0; i < sizeof(scsi_sense_response_t); i++) {
-    msdp->sense.byte[i] = 0x00;
-  }
+  /* Initialize sense structure to zero */
+  memset(&msdp->sense, 0, sizeof(msdp->sense));
 
   /* Response code = 0x70, additional sense length = 0x0A */
-  msdp->sense.byte[0] = 0x70;
-  msdp->sense.byte[7] = 0x0A;
+  msdp->sense.byte[0] = 0x70;//FIXME use #define, what is this???
+  msdp->sense.byte[7] = 0x0A;//FIXME use #define, what is this???
 
   /* make sure block device is working and get info */
   msdSetDefaultSenseKey(msdp);
@@ -816,11 +815,11 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
 
     /* loop over each block */
     for (i = 0; i < total_blocks; i++) {
+
       /* transmit the block */
-      while (usbGetTransmitStatusI(msdp->usbp, msdp->ms_ep_number)) {
+      //while (usbGetTransmitStatusI(msdp->usbp, msdp->ms_ep_number)) {
           //wait for the prior transmit to complete
-          //chThdSleepMicroseconds(500);
-      }
+      //}
       usbPrepareTransmit(msdp->usbp, msdp->ms_ep_number, read_buffer[i % 2],
                          msdp->block_dev_info.blk_size);
 
@@ -874,7 +873,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
        * not show back up on the host. We need a way to break out of this loop when disconnected from the bus.
        */
 
-      if (msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_NONE) == WAIT_ISR_BUSS_RESET_OR_RECONNECT) {
+      if (msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN) == WAIT_ISR_BUSS_RESET_OR_RECONNECT) {
         //fixme are we handling the reset case properly
         return MSD_WAIT_MODE_NONE;
       }
