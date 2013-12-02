@@ -226,8 +226,8 @@ struct USBMassStorageDriver {
     BinarySemaphore mass_sorage_thd_bsem;
     volatile uint32_t trigger_transfer_index;
 
-    volatile uint32_t wait_bulk_in_isr_counter;
-    volatile uint32_t wait_bulk_out_isr_counter;
+    volatile bool_t bulk_in_interupt_flag;
+    volatile bool_t bulk_out_interupt_flag;
 
     msd_state_t state;
     msd_cbw_t cbw;

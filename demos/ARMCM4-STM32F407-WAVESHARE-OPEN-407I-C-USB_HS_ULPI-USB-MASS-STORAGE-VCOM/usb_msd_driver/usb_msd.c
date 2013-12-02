@@ -40,11 +40,9 @@
 /*===========================================================================*/
 
 #define MSD_ENABLE_PERF_DEBUG_GPIOS    FALSE
-
 #define MSD_DEBUG_NESTING              FALSE
-
-//#define MSD_DEBUG                    FALSE
-#define MSD_DEBUG                      (palReadPad(GPIOI, GPIOI_PIN4))
+#define MSD_DEBUG                      FALSE
+//#define MSD_DEBUG                      (palReadPad(GPIOI, GPIOI_PIN4))
 
 #define msd_debug_print(chp_arg, args ...) if (MSD_DEBUG && chp_arg != NULL ) { chprintf(chp_arg, args); }
 #define msd_debug_nest_print(chp_arg, args ...) if ( MSD_DEBUG_NESTING && chp_arg != NULL ) { chprintf(chp_arg, args); }
@@ -96,7 +94,7 @@ static Thread *msdUSBTransferThd = NULL;
 
 #define WAIT_ISR_SUCCESS                     0
 #define WAIT_ISR_BUSS_RESET_OR_RECONNECT     1
-static uint8_t WaitForISR(USBMassStorageDriver *msdp, const bool_t check_reset, const msd_wait_mode_t wait_mode);
+static uint8_t msdWaitForISR(USBMassStorageDriver *msdp, const bool_t check_reset, const msd_wait_mode_t wait_mode);
 static void msdSetDefaultSenseKey(USBMassStorageDriver *msdp);
 
 #define BLOCK_SIZE_INCREMENT                 512
@@ -104,14 +102,14 @@ static void msdSetDefaultSenseKey(USBMassStorageDriver *msdp);
 
 #define MSD_START_TRANSMIT(msdp) \
   chSysLock(); \
-  msdp->wait_bulk_in_isr_counter = 0; \
+  msdp->bulk_in_interupt_flag = false; \
   usbStartTransmitI(msdp->usbp, msdp->ms_ep_number); \
   chSysUnlock();
 
 
 #define MSD_START_RECEIVED(msdp) \
     chSysLock(); \
-    msdp->wait_bulk_out_isr_counter = 0; \
+    msdp->bulk_out_interupt_flag = false; \
     usbStartReceiveI(msdp->usbp, msdp->ms_ep_number); \
     chSysUnlock();
 
@@ -174,7 +172,8 @@ void msdBulkInCallbackComplete(USBDriver *usbp, usbep_t ep) {
     chSysLockFromIsr();
     chBSemSignalI(&(msdp->bsem));
 
-    msdp->wait_bulk_in_isr_counter = 1;
+    msdp->bulk_in_interupt_flag = true;
+
 
     chSysUnlockFromIsr();
   }
@@ -198,7 +197,7 @@ void msdBulkOutCallbackComplete(USBDriver *usbp, usbep_t ep) {
     chSysLockFromIsr();
     chBSemSignalI(&(msdp->bsem));
 
-    msdp->wait_bulk_out_isr_counter = 1;
+    msdp->bulk_out_interupt_flag = true;
 
     chSysUnlockFromIsr();
   }
@@ -404,7 +403,7 @@ const char* usb_msd_driver_state_t_to_str(const usb_msd_driver_state_t driver_st
 /* Event Flow Functions */
 
 
-static uint8_t WaitForISR(USBMassStorageDriver *msdp, const bool_t check_reset, const msd_wait_mode_t wait_mode) {
+static uint8_t msdWaitForISR(USBMassStorageDriver *msdp, const bool_t check_reset, const msd_wait_mode_t wait_mode) {
   uint8_t ret = WAIT_ISR_SUCCESS;
   /* sleep until it completes */
   chSysLock();
@@ -412,13 +411,13 @@ static uint8_t WaitForISR(USBMassStorageDriver *msdp, const bool_t check_reset, 
   msd_debug_print(msdp->chp, "WaitISR(mode=%d)\r\n", wait_mode);
   for (;;) {
     const msg_t m = chBSemWaitTimeoutS(&msdp->bsem, 1);
-    if (m == RDY_OK) {
+    if (m == RDY_OK && wait_mode == MSD_WAIT_MODE_NONE ) {
       break;
     }
 
-    if( wait_mode == MSD_WAIT_MODE_BULK_IN && msdp->wait_bulk_in_isr_counter != 0 ) {
+    if( wait_mode == MSD_WAIT_MODE_BULK_IN && msdp->bulk_in_interupt_flag ) {
       break;
-    } else if( wait_mode == MSD_WAIT_MODE_BULK_OUT && msdp->wait_bulk_out_isr_counter != 0 ) {
+    } else if( wait_mode == MSD_WAIT_MODE_BULK_OUT && msdp->bulk_out_interupt_flag ) {
       break;
     }
 
@@ -602,15 +601,14 @@ static void SCSIWriteTransferPingPong(USBMassStorageDriver *msdp,
   for (cnt = 0;
       cnt < BLOCK_WRITE_ITTERATION_COUNT
           && cnt < dest_buffer->max_blocks_to_read; cnt++) {
+
     usbPrepareReceive(msdp->usbp, msdp->ms_ep_number,
                       (uint8_t*)&dest_buffer->buf[cnt * BLOCK_SIZE_INCREMENT],
                       (msdp->block_dev_info.blk_size));
 
     MSD_START_RECEIVED(msdp);
 
-    chThdSleepMicroseconds(100);//FIXME: for some reason if you don't sleep here then we miss the very last bulk out transfer, and that gets used as the CSW, which is totally invalid
-
-    WaitForISR(msdp, FALSE, MSD_WAIT_MODE_BULK_OUT);
+    msdWaitForISR(msdp, FALSE, MSD_WAIT_MODE_BULK_OUT);
 
     dest_buffer->num_blocks_to_write++;
   }
@@ -876,7 +874,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
        * not show back up on the host. We need a way to break out of this loop when disconnected from the bus.
        */
 
-      if (WaitForISR(msdp, TRUE, MSD_WAIT_MODE_NONE) == WAIT_ISR_BUSS_RESET_OR_RECONNECT) {
+      if (msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_NONE) == WAIT_ISR_BUSS_RESET_OR_RECONNECT) {
         //fixme are we handling the reset case properly
         return MSD_WAIT_MODE_NONE;
       }
@@ -995,13 +993,13 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
 
 #if 0
     chSysLock();
-    msdp->wait_bulk_out_isr_counter = 0;
+    msdp->bulk_out_interupt_flag = false;
     usbStallReceiveI(msdp->usbp, msdp->ms_ep_number);
     //usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
     chSysUnlock();
 
     //wait for the host to clear the stall
-    WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_OUT);
+    msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_OUT);
 
     /* don't wait for ISR */
     return MSD_WAIT_MODE_NONE;
@@ -1063,11 +1061,11 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
 
         /* stall IN endpoint */
         chSysLock()
-        msdp->wait_bulk_in_isr_counter = 0;
+        msdp->bulk_in_interupt_flag = false;
         usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
         chSysUnlock()
 
-        WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);
+        msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);
 
         cbw->data_len = 0;
         return MSD_WAIT_MODE_NONE;
@@ -1082,29 +1080,29 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
     chSysLock();
     if( msdp->stall_in_endpoint ) {
       msd_debug_err_print(msdp->chp, "stalling IN endpoint\r\n");
-      msdp->wait_bulk_in_isr_counter = 0;
+      msdp->bulk_in_interupt_flag = false;
       usbStallTransmitI(msdp->usbp, msdp->ms_ep_number);
     }
     if( msdp->stall_out_endpoint ) {
       msd_debug_err_print(msdp->chp, "stalling OUT endpoint\r\n");
-      msdp->wait_bulk_out_isr_counter = 0;
+      msdp->bulk_out_interupt_flag = false;
       usbStallReceiveI(msdp->usbp, msdp->ms_ep_number);
     }
     chSysUnlock();
 
     if( msdp->stall_in_endpoint ) {
-      WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);
+      msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);
     }
 
     if( msdp->stall_out_endpoint ) {
-      WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_OUT);
+      msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_OUT);
     }
   }
 
 
   if (wait_mode != MSD_WAIT_MODE_NONE ) {
     msd_debug_nest_print(msdp->chp, "H");
-    if (WaitForISR(msdp, TRUE, wait_mode) == WAIT_ISR_BUSS_RESET_OR_RECONNECT) {
+    if (msdWaitForISR(msdp, TRUE, wait_mode) == WAIT_ISR_BUSS_RESET_OR_RECONNECT) {
       msd_debug_nest_print(msdp->chp, "h");
       return (MSD_WAIT_MODE_NONE);
     }
@@ -1125,15 +1123,15 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
                      sizeof(msd_csw_t));
 
   chSysLock();
-  msdp->wait_bulk_out_isr_counter = 0;
+  msdp->bulk_out_interupt_flag = false;
   msdWaitForCommandBlock(msdp);
 
-  msdp->wait_bulk_in_isr_counter = 0;
+  msdp->bulk_in_interupt_flag = false;
   usbStartTransmitI(msdp->usbp, msdp->ms_ep_number);
   chSysUnlock();
   msd_debug_nest_print(msdp->chp, "i");
 
-  WaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);//wait for our status to be sent back
+  msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);//wait for our status to be sent back
 
   /* wait on ISR */
   //return MSD_WAIT_MODE_BULK_IN;
@@ -1188,7 +1186,7 @@ static msg_t MassStorageThd(void *arg) {
 
   /* wait for the usb to be initialized */
   msd_debug_print(msdp->chp, "Y");
-  WaitForISR(msdp, FALSE, MSD_WAIT_MODE_NONE);
+  msdWaitForISR(msdp, FALSE, MSD_WAIT_MODE_NONE);
   msd_debug_print(msdp->chp, "y");
 
   while (TRUE) {
@@ -1243,7 +1241,7 @@ static msg_t MassStorageThd(void *arg) {
    if (wait_for_isr && (!msdp->reconfigured_or_reset_event)) {
       /* wait until the ISR wakes thread */
       msd_debug_print(msdp->chp, "W%d,%d", wait_for_isr, msdp->state);
-      WaitForISR(msdp, TRUE, wait_for_isr);
+      msdWaitForISR(msdp, TRUE, wait_for_isr);
       msd_debug_print(msdp->chp, "w\r\n");
     }
    msd_debug_nest_print(msdp->chp, "j");
