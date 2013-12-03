@@ -160,12 +160,12 @@ PACK_STRUCT_BEGIN typedef struct {
     uint8_t payload_byte_length[4];
     uint32_t last_block_addr;
     uint32_t block_size;
-} PACK_STRUCT_STRUCT SCSIReadFormatCapacityResponse_t PACK_STRUCT_END;
+} PACK_STRUCT_STRUCT scsi_read_format_capacity_response_t PACK_STRUCT_END;
 
 PACK_STRUCT_BEGIN typedef struct {
 	uint32_t last_block_addr;
 	uint32_t block_size;
-} PACK_STRUCT_STRUCT SCSIReadCapacity10Response_t PACK_STRUCT_END;
+} PACK_STRUCT_STRUCT scsi_read_capacity10_response_t PACK_STRUCT_END;
 
 PACK_STRUCT_BEGIN typedef struct {
 	uint8_t op_code;
@@ -174,7 +174,7 @@ PACK_STRUCT_BEGIN typedef struct {
 	uint8_t res2;
 	uint8_t loej_start;
 	uint8_t control;
-} PACK_STRUCT_STRUCT SCSIStartStopUnitRequest_t;
+} PACK_STRUCT_STRUCT scsi_start_stop_unit_request_t;
 
 
 
@@ -228,6 +228,15 @@ struct USBMassStorageDriver {
 
     volatile bool_t bulk_in_interupt_flag;
     volatile bool_t bulk_out_interupt_flag;
+
+    struct {
+      scsi_read_format_capacity_response_t format_capacity_response;
+      scsi_read_capacity10_response_t read_capacity10_response;
+      scsi_mode_sense6_response_t mode_sense6_response;
+      uint8_t max_lun_len_buf[1];
+      scsi_inquiry_response_t scsi_inquiry_response;
+    } data;
+
 
     msd_state_t state;
     msd_cbw_t cbw;
