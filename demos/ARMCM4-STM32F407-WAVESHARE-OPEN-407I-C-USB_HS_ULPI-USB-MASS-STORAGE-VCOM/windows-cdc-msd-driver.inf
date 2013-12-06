@@ -12,7 +12,7 @@ Signature="$Windows NT$"
 Class=Ports
 ClassGuid={4D36E978-E325-11CE-BFC1-08002BE10318}
 Provider=%ChibiOS%
-DriverVer=12/03/2013,1.0.0000.0
+DriverVer=12/02/2013,1.0.0000.0
 
 [Manufacturer]
 %ChibiOS%=DeviceList, NTamd64
@@ -90,10 +90,10 @@ ServiceBinary=%12%\USBSER.sys
 [SourceDisksFiles]
 [SourceDisksNames]
 [DeviceList]
-%DESCRIPTION%=DriverInstall, USB\VID_0483&PID_5742&MI_00
+%DESCRIPTION%=DriverInstall, USB\VID_0483&PID_5743&MI_00
 
 [DeviceList.NTamd64]
-%DESCRIPTION%=DriverInstall, USB\VID_0483&PID_5742&MI_00
+%DESCRIPTION%=DriverInstall, USB\VID_0483&PID_5743&MI_00
 
 
 ;------------------------------------------------------------------------------
