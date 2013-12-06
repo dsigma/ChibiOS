@@ -41,7 +41,7 @@ extern SerialUSBDriver SDU1;
 #define MULTI_FUNCTION_SUB_CLASS          0x02
 #define MULTI_FUNCTION_DEVICE_PROTOCOL    0x01
 #define VENDOR_ID                         0x0483
-#define PRODUCT_ID                        0x5742
+#define PRODUCT_ID                        0x5743
 
 #define MASS_STORAGE_INTERFACE_CLASS            0x08
 #define MASS_STORAGE_INTERFACE_SCSI_SUB_CLASS   0x06
