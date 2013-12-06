@@ -11,6 +11,10 @@ The demo runs on an WaveShare STM32F4 Open 407I-C board.
 This will demonstrate the use of a Composite USB Mass Storage and Virtual COM
  device over the high speed ULPI interface to access an SD card and serial 
  interface.
+ 
+ If you are testing under windows, be sure to install the VCOM driver using
+ the "windows-cdc-msd-driver.inf" file. You may need to do this manually from
+ device manager using the "Update Driver" button.
 
 ** Build Procedure **
 
