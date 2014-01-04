@@ -953,6 +953,7 @@ void usb_lld_start(USBDriver *usbp) {
 #else
     otgp->GCCFG = GCCFG_VBUSASEN | GCCFG_VBUSBSEN | GCCFG_PWRDWN;
 #endif
+#endif
 
 
     /* Soft core reset.*/
