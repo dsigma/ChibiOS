@@ -89,6 +89,20 @@
 *****************************************************************************
 
 *** 2.7.0 ***
+- FIX: Fixed wrong STM32_TIM_CCMR2_OCxM macros on STM32F30x (bug #449)
+  (backported to 2.6.2).
+- FIX: Fixed STM32F30x TIM1/TIM8 alternate clock source setting not
+  recognized (bug #448)(backported to 2.6.2).
+- FIX: Fixed wrong MCO2 check in STM32F4xx HAL driver (bug #447)(backported
+  to 2.4.6 and 2.6.2).
+- FIX: Fixed spurious half buffer callback in STM32 ADC drivers (bug #446)
+  (backported to 2.4.6 and 2.6.2).
+- FIX: Fixed callbacks changes to the ADC high level driver (bug #445)
+  (backported to 2.4.6 and 2.6.2).
+- FIX: Fixed wrong definition in STM32F37x ADC driver (bug #444)(backported
+  to 2.6.2).
+- FIX: Fixed wrong CORTEX_PRIORITY_PENDSV value (bug #443)(backported to
+  2.4.6 and 2.6.2).
 - FIX: Fixed lost incoming characters in STM32 USARTv1 driver (bug #442)
   (backported to 2.4.6 and 2.6.2).
 - FIX: Fixed UART4/5-related bugs in STM32 USARTv1 UART driver (bug #440)
@@ -100,6 +114,7 @@
 - FIX: Fixed timing issue in the STM32 OTGv1 USB driver (bug #436)(backported
   to 2.6.2).
 - FIX: Fixed STM32L1 remove reset flag (bug #435)(backported to 2.6.2).
+- FIX: Fixed unaligned data access in USB LLD (bug #434)(backported to 2.6.2).
 - FIX: Fixed add RTC to STM32L1 (bug #433)(backported to 2.6.2).
 - FIX: Fixed support 10-bit addresses in STM32 I2C driver (bug #432)
   (backported to 2.6.2).
@@ -130,7 +145,10 @@
   (backported to 2.6.0).
 - FIX: Fixed MS2ST() and US2ST() macros error (bug #415)(backported to 2.6.0,
   2.4.4, 2.2.10, NilRTOS).
-- NEW: Added chvprintf() function to the chprintf module.
+- NEW: Added support for STM32F030xx/050xx/060xx devices.
+- NEW: Added BOARD_OTG_NOVBUSSENS board option for STM32 OTG.
+- NEW: Added SPI4/SPI5/SPI6 support to the STM32v1 SPIv1 low level driver.
+- NEW: Added chvprintf() and chsnprintf() functions to the chprintf module.
 - NEW: Improved time range check in the kernel, new API chTimeElapsedSince()
   introduced. The API chTimeIsWithin() is now a macro.
 - NEW: Added a new function shellExit() to the shell. It allows to exit the
@@ -149,6 +167,7 @@
 - NEW: SPI driver for SPC560Pxx, SPC563Mxx, SPC564Axx, SPC56ELAxx, SPC560Dxx.
 - NEW: Support for SPC560Dxx devices.
 - NEW: DMA-MUX support for SPC5xx devices.
+- NEW: Added CAN driver for AT91SAM7.
 - CHANGE: Moved the STM32 GPT, ICU and PWM low level drivers under
   ./os/hal/platform/STM32/TIMv1. Updated all the impacted project files.
 
