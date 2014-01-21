@@ -89,6 +89,16 @@
 *****************************************************************************
 
 *** 2.7.0 ***
+- FIX: Fixed race condition in STM32 SDC driver (bug #458)(backported
+  to 2.6.3).
+- FIX: Fixed race condition in STM32 OTG driver (bug #457)(backported
+  to 2.6.3).
+- FIX: Fixed memstreams.c missing from simulator makefiles (bug #454)
+  (backported to 2.6.3).
+- FIX: Fixed chprintf() does not compile in strict C90 mode (bug #453)
+  (backported to 2.6.3).
+- FIX: Fixed wrong vector names for STM32Lxx (bug #451)(backported
+  to 2.4.6 and 2.6.2).
 - FIX: Fixed wrong STM32_TIM_CCMR2_OCxM macros on STM32F30x (bug #449)
   (backported to 2.6.2).
 - FIX: Fixed STM32F30x TIM1/TIM8 alternate clock source setting not
