@@ -99,7 +99,7 @@ static uint8_t msdWaitForISR(USBMassStorageDriver *msdp, const bool_t check_rese
 static void msdSetDefaultSenseKey(USBMassStorageDriver *msdp);
 
 #define BLOCK_SIZE_INCREMENT                 512
-#define BLOCK_WRITE_ITTERATION_COUNT         32
+#define BLOCK_WRITE_ITTERATION_COUNT         16
 
 #define MSD_START_TRANSMIT(msdp) \
   chSysLock(); \
