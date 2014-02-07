@@ -235,6 +235,8 @@ typedef struct {
 #define GUSBCFG_FDMOD           (1U<<30)    /**< Force Device Mode.         */
 #define GUSBCFG_FHMOD           (1U<<29)    /**< Force Host Mode.           */
 #define GUSBCFG_ULPIEVBUSD      (1U<<20)    /**< ULPI External VBUS Drive   */
+#define GUSBCFG_ULPIICSM        (1U<<19)    /**< ULPI Clock SuspendM        */
+#define GUSBCFG_ULPIFSLS        (1U<<17)    /**< ULPI FS/LS Select          */
 #define GUSBCFG_TRDT_MASK       (15U<<10)   /**< USB Turnaround time field
                                                  mask.                      */
 #define GUSBCFG_TRDT(n)         ((n)<<10)   /**< USB Turnaround time field
