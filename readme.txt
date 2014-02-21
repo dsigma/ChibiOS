@@ -89,10 +89,19 @@
 *****************************************************************************
 
 *** 2.7.0 ***
+- FIX: Fixed TM32 SDC driver clock activation issue (bug #464)(backported to
+  2.6.3).
+- FIX: Fixed spurious callback in ICU driver (bug #461)(backported to 2.6.3
+  and 2.4.6).
+- FIX: Fixed compile error in STM32F0xx ADC driver when STM32F0XX_LD devices
+  are selected (bug #460)(backported to 2.6.3).
 - FIX: Fixed race condition in STM32 SDC driver (bug #458)(backported
   to 2.6.3).
 - FIX: Fixed race condition in STM32 OTG driver (bug #457)(backported
   to 2.6.3).
+- FIX: Fixed switch to LAN8710A PHY for STM32-E407 boards (bug #456)
+  (backported to 2.6.3).
+- FIX: Fixed add PHY id of LAN8710A (bug #455)(backported to 2.6.3).
 - FIX: Fixed memstreams.c missing from simulator makefiles (bug #454)
   (backported to 2.6.3).
 - FIX: Fixed chprintf() does not compile in strict C90 mode (bug #453)
