@@ -86,8 +86,8 @@ CSRC = $(PORTSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/shell.c \
        $(CHIBIOS)/os/various/chprintf.c \
-       timcap_lld.c \
-       timcap.c \
+       timcap/timcap_lld.c \
+       timcap/timcap.c \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
@@ -120,7 +120,8 @@ ASMSRC = $(PORTASM)
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
          $(CHIBIOS)/os/various/devices_lib/accel \
-         $(CHIBIOS)/os/various
+         $(CHIBIOS)/os/various \
+         timcap/
 
 #
 # Project, sources and paths
