@@ -269,8 +269,10 @@ unsigned_common:
         chSequentialStreamPut(chp, (uint8_t)filler);
       while (++width != 0);
     }
-    chSequentialStreamWrite(chp, (uint8_t*)s, i);
-    s += i;
+    while (--i >= 0)
+      chSequentialStreamPut(chp, (uint8_t)*s++);
+    //chSequentialStreamWrite(chp, (uint8_t*)s, i);
+    //s += i;
 
     while (width) {
       chSequentialStreamPut(chp, (uint8_t)filler);
