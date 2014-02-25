@@ -29,6 +29,8 @@
 
 #if HAL_USE_USB || defined(__DOXYGEN__)
 
+#define STM32_USB_OTG_SERIAL_TESTING_MODE     FALSE
+
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
@@ -867,6 +869,10 @@ void usb_lld_init(void) {
 void usb_lld_start(USBDriver *usbp) {
   stm32_otg_t *otgp = usbp->otg;
 
+
+
+
+
   if (usbp->state == USB_STOP) {
     /* Clock activation.*/
 #if STM32_USB_USE_OTG1
@@ -906,6 +912,7 @@ void usb_lld_start(USBDriver *usbp) {
                                                     usb_lld_pump,
                                                     usbp);
 
+
     /* - Forced device mode.
        - USB turn-around time = TRDT_VALUE. */
 #if STM32_USE_USB_OTG2_ULPI
@@ -916,7 +923,14 @@ void usb_lld_start(USBDriver *usbp) {
     otgp->GUSBCFG = GUSBCFG_FDMOD | GUSBCFG_TRDT(TRDT_VALUE) | GUSBCFG_PHYSEL;
 #endif
 
-
+    /*FIXME serial mode notes
+      * -select FS mode
+      * -power down the clock
+      */
+#if STM32_USB_OTG_SERIAL_TESTING_MODE
+    /* USB 2.0 High Speed PHY but in full speed mode*/
+    otgp->DCFG = 0x02200000 | DCFG_DSPD_HS_FS;
+#else
 #if STM32_USE_USB_OTG2_HS
     /* USB 2.0 High Speed PHY.*/
     otgp->DCFG = 0x02200000 | DCFG_DSPD_HS;
@@ -928,6 +942,7 @@ void usb_lld_start(USBDriver *usbp) {
     /* 48MHz 1.1 PHY.*/
     otgp->DCFG = 0x02200000 | DCFG_DSPD_FS11;
 #  endif
+#endif
 #endif
 
     /* PHY enabled.*/
@@ -955,9 +970,14 @@ void usb_lld_start(USBDriver *usbp) {
 #endif
 #endif
 
-
+#if STM32_USB_OTG_SERIAL_TESTING_MODE
+    otgp->GUSBCFG |= GUSBCFG_ULPIICSM | GUSBCFG_ULPIFSLS;
+    otgp->GRSTCTL = GRSTCTL_CSRST;
+#else
     /* Soft core reset.*/
     otg_core_reset(usbp);
+#endif
+
 
     /* Interrupts on TXFIFOs half empty.*/
     otgp->GAHBCFG = 0;
@@ -979,6 +999,8 @@ void usb_lld_start(USBDriver *usbp) {
                        GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM;
     }
     otgp->GINTSTS  = 0xFFFFFFFF;         /* Clears all pending IRQs, if any. */
+
+
 
     /* Global interrupts enable.*/
     otgp->GAHBCFG |= GAHBCFG_GINTMSK;
