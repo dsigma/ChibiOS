@@ -94,6 +94,24 @@
 #endif
 
 /**
+ * @brief   UART7 driver enable switch.
+ * @details If set to @p TRUE the support for UART7 is included.
+ * @note    The default is @p TRUE.
+ */
+#if !defined(STM32_SERIAL_USE_UART7) || defined(__DOXYGEN__)
+#define STM32_SERIAL_USE_UART7             FALSE
+#endif
+
+/**
+ * @brief   UART8 driver enable switch.
+ * @details If set to @p TRUE the support for UART8 is included.
+ * @note    The default is @p TRUE.
+ */
+#if !defined(STM32_SERIAL_USE_UART8) || defined(__DOXYGEN__)
+#define STM32_SERIAL_USE_UART8             FALSE
+#endif
+
+/**
  * @brief   USART1 interrupt priority level setting.
  */
 #if !defined(STM32_SERIAL_USART1_PRIORITY) || defined(__DOXYGEN__)
@@ -133,6 +151,20 @@
  */
 #if !defined(STM32_SERIAL_USART6_PRIORITY) || defined(__DOXYGEN__)
 #define STM32_SERIAL_USART6_PRIORITY        12
+#endif
+
+/**
+ * @brief   UART7 interrupt priority level setting.
+ */
+#if !defined(STM32_SERIAL_UART7_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_SERIAL_UART7_PRIORITY        12
+#endif
+
+/**
+ * @brief   UART8 interrupt priority level setting.
+ */
+#if !defined(STM32_SERIAL_UART8_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_SERIAL_UART8_PRIORITY        12
 #endif
 /** @} */
 
@@ -284,6 +316,12 @@ extern SerialDriver SD5;
 #endif
 #if STM32_SERIAL_USE_USART6 && !defined(__DOXYGEN__)
 extern SerialDriver SD6;
+#endif
+#if STM32_SERIAL_USE_UART7 && !defined(__DOXYGEN__)
+extern SerialDriver SD7;
+#endif
+#if STM32_SERIAL_USE_UART8 && !defined(__DOXYGEN__)
+extern SerialDriver SD8;
 #endif
 
 #ifdef __cplusplus

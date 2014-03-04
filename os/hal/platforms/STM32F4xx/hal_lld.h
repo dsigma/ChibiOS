@@ -685,6 +685,9 @@
 #define DCMI_IRQHandler         Vector178   /**< DCMI.                      */
 #define CRYP_IRQHandler         Vector17C   /**< CRYP.                      */
 #define HASH_RNG_IRQHandler     Vector180   /**< Hash and Rng.              */
+#define UART7_IRQHandler        Vector188   /**< UART7.                     */
+#define UART8_IRQHandler        Vector18C   /**< UART8.                     */
+
 #if defined(STM32F4XX) || defined(__DOXYGEN__)
 #define FPU_IRQHandler          Vector184   /**< Floating Point Unit.       */
 #endif
