@@ -116,6 +116,8 @@
 #define STM32_UART4_HANDLER         UART4_IRQHandler
 #define STM32_UART5_HANDLER         UART5_IRQHandler
 #define STM32_USART6_HANDLER        USART6_IRQHandler
+#define STM32_UART7_HANDLER         UART7_IRQHandler
+#define STM32_UART8_HANDLER         UART8_IRQHandler
 
 #define STM32_USART1_NUMBER         USART1_IRQn
 #define STM32_USART2_NUMBER         USART2_IRQn
@@ -123,6 +125,8 @@
 #define STM32_UART4_NUMBER          UART4_IRQn
 #define STM32_UART5_NUMBER          UART5_IRQn
 #define STM32_USART6_NUMBER         USART6_IRQn
+#define STM32_UART7_NUMBER          UART7_IRQn
+#define STM32_UART8_NUMBER          UART8_IRQn
 /** @} */
 
 /*===========================================================================*/
