@@ -196,9 +196,19 @@
 #error "USART6 not present in the selected device"
 #endif
 
+#if STM32_SERIAL_USE_UART7 && !STM32_HAS_UART7
+#error "UART7 not present in the selected device"
+#endif
+
+#if STM32_SERIAL_USE_UART8 && !STM32_HAS_UART8
+#error "UART8 not present in the selected device"
+#endif
+
+
 #if !STM32_SERIAL_USE_USART1 && !STM32_SERIAL_USE_USART2 &&                 \
     !STM32_SERIAL_USE_USART3 && !STM32_SERIAL_USE_UART4  &&                 \
-    !STM32_SERIAL_USE_UART5  && !STM32_SERIAL_USE_USART6
+    !STM32_SERIAL_USE_UART5  && !STM32_SERIAL_USE_USART6 &&                 \
+    !STM32_SERIAL_USE_UART7  && !STM32_SERIAL_USE_UART8
 #error "SERIAL driver activated but no USART/UART peripheral assigned"
 #endif
 
@@ -231,6 +241,17 @@
     !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_SERIAL_USART6_PRIORITY)
 #error "Invalid IRQ priority assigned to USART6"
 #endif
+
+#if STM32_SERIAL_USE_UART7 &&                                               \
+    !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_SERIAL_UART7_PRIORITY)
+#error "Invalid IRQ priority assigned to UART7"
+#endif
+
+#if STM32_SERIAL_USE_UART8 &&                                               \
+    !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_SERIAL_UART8_PRIORITY)
+#error "Invalid IRQ priority assigned to UART8"
+#endif
+
 
 /*===========================================================================*/
 /* Driver data structures and types.                                         */
