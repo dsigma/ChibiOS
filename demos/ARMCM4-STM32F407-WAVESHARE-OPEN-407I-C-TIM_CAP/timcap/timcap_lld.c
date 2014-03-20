@@ -169,6 +169,59 @@ static timcapchannel_t timcap_get_max_timer_channel(const TIMCAPDriver *timcapp)
 
 
 /**
+ * @brief   Returns the maximum value for the ARR register of a given timer.
+ *
+ * @param[in] timcapp      pointer to the @p TIMCAPDriver object
+ */
+static uint32_t timcap_get_max_arr(const TIMCAPDriver *timcapp) {
+  //Choose a sane default value
+#if STM32_TIMCAP_USE_TIM1 || defined(__DOXYGEN__)
+  if( timcapp == &TIMCAPD1 ) {
+    return(UINT16_MAX);
+  }
+#endif
+
+#if STM32_TIMCAP_USE_TIM2 || defined(__DOXYGEN__)
+  if( timcapp == &TIMCAPD2 ) {
+    return(UINT32_MAX);
+  }
+#endif
+
+#if STM32_TIMCAP_USE_TIM3 || defined(__DOXYGEN__)
+  if( timcapp == &TIMCAPD3 ) {
+    return(UINT16_MAX);
+  }
+#endif
+
+#if STM32_TIMCAP_USE_TIM4 || defined(__DOXYGEN__)
+  if( timcapp == &TIMCAPD4 ) {
+    return(UINT16_MAX);
+  }
+#endif
+
+#if STM32_TIMCAP_USE_TIM5 || defined(__DOXYGEN__)
+  if( timcapp == &TIMCAPD5 ) {
+    return(UINT32_MAX);
+  }
+#endif
+
+#if STM32_TIMCAP_USE_TIM8 || defined(__DOXYGEN__)
+  if( timcapp == &TIMCAPD8 ) {
+    return(UINT16_MAX);
+  }
+#endif
+
+#if STM32_TIMCAP_USE_TIM9 || defined(__DOXYGEN__)
+  if( timcapp == &TIMCAPD9 ) {
+    return(UINT16_MAX);
+  }
+#endif
+
+  /*Return a conservative default value.*/
+  return(UINT16_MAX);
+}
+
+/**
  * @brief   Shared IRQ handler.
  *
  * @param[in] timcapp      pointer to the @p TIMCAPDriver object
@@ -560,7 +613,8 @@ void timcap_lld_start(TIMCAPDriver *timcapp) {
               ((psc + 1) * timcapp->config->frequency) == timcapp->clock,
               "timcap_lld_start(), #1", "invalid frequency");
   timcapp->tim->PSC  = (uint16_t)psc;
-  timcapp->tim->ARR   = 0xFFFF;
+  //timcapp->tim->ARR   = 0xFFFF;
+  timcapp->tim->ARR = timcap_get_max_arr(timcapp);
 
 
 
