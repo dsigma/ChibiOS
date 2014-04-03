@@ -217,8 +217,10 @@ struct USBMassStorageDriver {
     BaseSequentialStream *chp; /*For debug logging*/
 
     /* Externally readable values */
-    uint32_t read_error_count;
-    uint32_t write_error_count;
+    volatile uint32_t read_error_count;
+    volatile uint32_t write_error_count;
+    volatile bool_t debug_enable_msd;
+    volatile msd_wait_mode_t debug_wait_for_isr;
 
     /*Internal data for operation of the driver */
     BinarySemaphore bsem;

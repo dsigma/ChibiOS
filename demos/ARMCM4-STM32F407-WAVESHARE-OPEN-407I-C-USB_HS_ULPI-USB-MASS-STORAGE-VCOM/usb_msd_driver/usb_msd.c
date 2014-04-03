@@ -1186,6 +1186,7 @@ static msg_t MassStorageThd(void *arg) {
     if( msdp->driver_state != USB_MSD_DRIVER_OK ) {
       enable_msd = false;
     }
+    msdp->debug_enable_msd = enable_msd;
 
     if (enable_msd ) {
       msd_debug_print(msdp->chp, "state=%d\r\n", msdp->state);
@@ -1214,14 +1215,35 @@ static msg_t MassStorageThd(void *arg) {
       }
     }
 
-    msd_debug_nest_print(msdp->chp, "J");
-   if (wait_for_isr && (!msdp->reconfigured_or_reset_event)) {
+    msdp->debug_wait_for_isr = wait_for_isr;
+
+    if( enable_msd ) {
+      msd_debug_nest_print(msdp->chp, "L");
+    } else {
+      msd_debug_nest_print(msdp->chp, "M");
+    }
+
+    if (wait_for_isr) {
+      msd_debug_nest_print(msdp->chp, "J");
+    } else {
+      msd_debug_nest_print(msdp->chp, "K");
+    }
+
+    if (wait_for_isr && (!msdp->reconfigured_or_reset_event)) {
       /* wait until the ISR wakes thread */
       msd_debug_print(msdp->chp, "W%d,%d", wait_for_isr, msdp->state);
       msdWaitForISR(msdp, TRUE, wait_for_isr);
       msd_debug_print(msdp->chp, "w\r\n");
+    } else if( ! enable_msd ) {
+      chThdSleepMilliseconds(5);
     }
-   msd_debug_nest_print(msdp->chp, "j");
+
+
+    if (wait_for_isr) {
+      msd_debug_nest_print(msdp->chp, "j");
+    } else {
+      msd_debug_nest_print(msdp->chp, "k");
+    }
   }
 
   return 0;
