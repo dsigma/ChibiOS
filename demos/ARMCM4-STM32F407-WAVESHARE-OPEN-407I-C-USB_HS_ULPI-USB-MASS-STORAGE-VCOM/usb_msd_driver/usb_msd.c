@@ -83,8 +83,7 @@
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
-static WORKING_AREA(waMassStorage, 1024);
-static WORKING_AREA(waMassStorageUSBTransfer, 1024);
+
 
 static msg_t MassStorageUSBTransferThd(void *arg);
 static msg_t MassStorageThd(void *arg);
@@ -292,13 +291,13 @@ usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp) {
   /*upon entry, USB bus should be disconnected*/
 
   if (msdThd == NULL) {
-    msdThd = chThdCreateStatic(waMassStorage, sizeof(waMassStorage), NORMALPRIO,
+    msdThd = chThdCreateStatic(msdp->waMassStorage, sizeof(msdp->waMassStorage), NORMALPRIO,
                                MassStorageThd, msdp);
   }
 
   if (msdUSBTransferThd == NULL) {
-    msdUSBTransferThd = chThdCreateStatic(waMassStorageUSBTransfer,
-                                          sizeof(waMassStorageUSBTransfer),
+    msdUSBTransferThd = chThdCreateStatic(msdp->waMassStorageUSBTransfer,
+                                          sizeof(msdp->waMassStorageUSBTransfer),
                                           NORMALPRIO, MassStorageUSBTransferThd,
                                           msdp);
   }

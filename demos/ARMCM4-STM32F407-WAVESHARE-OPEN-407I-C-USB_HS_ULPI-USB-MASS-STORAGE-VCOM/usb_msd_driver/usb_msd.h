@@ -45,6 +45,7 @@
 #  define USB_MS_EP_SIZE 64
 #endif
 
+#define MSD_THREAD_STACK_SIZE     1024
 
 #define MSD_REQ_RESET		0xFF
 #define MSD_GET_MAX_LUN		0xFE
@@ -250,6 +251,9 @@ struct USBMassStorageDriver {
     bool_t command_succeeded_flag;
     bool_t stall_in_endpoint;
     bool_t stall_out_endpoint;
+
+    WORKING_AREA(waMassStorage, MSD_THREAD_STACK_SIZE);
+    WORKING_AREA(waMassStorageUSBTransfer, MSD_THREAD_STACK_SIZE);
 };
 
 
