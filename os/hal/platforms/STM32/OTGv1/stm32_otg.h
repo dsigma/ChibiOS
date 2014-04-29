@@ -313,8 +313,6 @@ typedef struct {
  */
 
 /**< Reserved, leave at reset value */
-#define GINTMSK_RESERVED_BITS   ((1U<<27) | (1U<<23) | (1U<<17) | (1U<<16) | (1U<<9) | (1U<<8))
-
 #define GINTMSK_WKUM            (1U<<31)    /**< Resume/remote wakeup
                                                  detected interrupt mask.   */
 #define GINTMSK_SRQM            (1U<<30)    /**< Session request/New session

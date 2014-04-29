@@ -894,14 +894,16 @@ void usb_lld_start(USBDriver *usbp) {
       /* OTG HS clock enable and reset.*/
 #if STM32_USE_USB_OTG2_ULPI
       /* Note: clocks to GPIO A, B, C, H, I should be enabled by pal_lld.c for ULPI to work.*/
-      rccEnableAHB1(RCC_AHB1ENR_OTGHSULPIEN, FALSE);
-#endif
       rccEnableOTG_HS(FALSE);
-      rccResetOTG_HS();
-
+      rccEnableOTG_HSULPI(FALSE);
+#else
       /* Workaround for the problem described here:
          http://forum.chibios.org/phpbb/viewtopic.php?f=16&t=1798 */
       rccDisableOTG_HSULPI(TRUE);
+      rccEnableOTG_HS(FALSE);
+#endif
+
+      rccResetOTG_HS();
 
       /* Enables IRQ vector.*/
       nvicEnableVector(STM32_OTG2_NUMBER,
@@ -965,7 +967,12 @@ void usb_lld_start(USBDriver *usbp) {
     }
     else {
       /* Internal FS PHY activation.*/
+#if defined(BOARD_OTG_NOVBUSSENS)
+      otgp->GCCFG = GCCFG_NOVBUSSENS | GCCFG_VBUSASEN | GCCFG_VBUSBSEN |
+                  GCCFG_PWRDWN;
+#else
       otgp->GCCFG = GCCFG_VBUSASEN | GCCFG_VBUSBSEN | GCCFG_PWRDWN;
+#endif
     }
 #else
     /* Internal FS PHY activation.*/
@@ -1006,8 +1013,7 @@ void usb_lld_start(USBDriver *usbp) {
                        GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM | GINTMSK_SOFM;
     }
 
-    /* Clears all pending IRQs, if any. */
-    otgp->GINTSTS  = (0xFFFFFFFF & (~(GINTMSK_RESERVED_BITS))) | (otgp->GINTSTS & GINTMSK_RESERVED_BITS);
+    otgp->GINTSTS  = 0xFFFFFFFF; /* Clears all pending IRQs, if any. */
 
 
 
