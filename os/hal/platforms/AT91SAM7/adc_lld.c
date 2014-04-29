@@ -117,6 +117,7 @@ ADCDriver ADCD1;
 									if ((isr & AT91C_ADC_EOC5)) dummy = ADCReg1->ADC_CDR5;		\
 									if ((isr & AT91C_ADC_EOC6)) dummy = ADCReg1->ADC_CDR6;		\
 									if ((isr & AT91C_ADC_EOC7)) dummy = ADCReg1->ADC_CDR7;		\
+									(void) dummy;												\
 								}
 #define adc_stop()				{																\
 									adc_disable();												\
@@ -160,6 +161,9 @@ static void handleint(void) {
 
 		/* Half transfer processing.*/
 		} else if ((isr & AT91C_ADC_ENDRX)) {
+			// Make sure we get a full complete next time.
+			ADCReg1->ADC_RNPR = 0;
+			ADCReg1->ADC_RNCR = 0;
 			_adc_isr_half_code(&ADCD1);
 		}
 
@@ -257,6 +261,7 @@ void adc_lld_stop(ADCDriver *adcp) {
  */
 void adc_lld_start_conversion(ADCDriver *adcp) {
 	uint32_t			i;
+	(void)				adcp;
 
 	/* Make sure everything is stopped first */
 	adc_stop();
@@ -285,8 +290,8 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
 
 	/* Set up the DMA */
 	ADCReg1->ADC_RPR = (uint32_t)ADCD1.samples;
-	if (adcp->depth <= 1) {
-		ADCReg1->ADC_RCR = ADCD1.grpp->num_channels;
+	if (ADCD1.depth <= 1 || !ADCD1.grpp->circular) {
+		ADCReg1->ADC_RCR = ADCD1.depth * ADCD1.grpp->num_channels;
 		ADCReg1->ADC_RNPR = 0;
 		ADCReg1->ADC_RNCR = 0;
 	} else {
