@@ -627,7 +627,10 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
   }
 
   if( sts & GINTSTS_USBSUSP ) {
-      /*TODO Implement suspend mode*/
+    /*TODO Implement suspend mode*/
+  }
+  if( sts & GINTSTS_OTGINT ) {
+    /*TODO Implement this*/
   }
 
   /* Reset interrupt handling.*/
@@ -992,13 +995,15 @@ void usb_lld_start(USBDriver *usbp) {
     otgp->DAINTMSK = 0;
     if (usbp->config->sof_cb == NULL) {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM;
+                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM;
     }
     else {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM;
+                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM | GINTMSK_SOFM;
     }
-    otgp->GINTSTS  = 0xFFFFFFFF;         /* Clears all pending IRQs, if any. */
+
+    /* Clears all pending IRQs, if any. */
+    otgp->GINTSTS  = (0xFFFFFFFF & (~(GINTMSK_RESERVED_BITS))) | (otgp->GINTSTS & GINTMSK_RESERVED_BITS);
 
 
 
