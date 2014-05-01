@@ -127,7 +127,13 @@ int main(void) {
    */
   init_sd();
   chprintf(chp, "done starting SDC\r\n");
-  sdcConnect(&SDCD1);
+  const bool_t sdcConnectStatus = sdcConnect(&SDCD1);
+  if( sdcConnectStatus != CH_SUCCESS ) {
+    chprintf(chp, "failed to connect to SD Card, sdcConnectStatus = %u\r\n", sdcConnectStatus);
+    for(;;) {
+      chThdSleepMilliseconds(3000);
+    }
+  }
 
   chprintf(chp, "setting up MSD\r\n");
   const usb_msd_driver_state_t msd_driver_state = msdInit(usb_driver, (BaseBlockDevice*)&SDCD1, &UMSD1, USB_MS_DATA_EP, USB_MSD_INTERFACE_NUMBER);
