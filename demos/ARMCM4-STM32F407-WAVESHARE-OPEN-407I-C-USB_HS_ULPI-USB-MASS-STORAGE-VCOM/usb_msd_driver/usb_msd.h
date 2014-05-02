@@ -220,6 +220,8 @@ struct USBMassStorageDriver {
     /* Externally readable values */
     volatile uint32_t read_error_count;
     volatile uint32_t write_error_count;
+    volatile uint32_t read_success_count;
+    volatile uint32_t write_success_count;
     volatile bool_t debug_enable_msd;
     volatile msd_wait_mode_t debug_wait_for_isr;
 

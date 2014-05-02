@@ -720,6 +720,8 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
 
         MSD_W_LED_OFF();
         return (MSD_WAIT_MODE_NONE);
+      } else {
+        msdp->write_success_count++;
       }
       msd_debug_nest_print(msdp->chp, "e");
       MSD_W_LED_OFF();
@@ -763,6 +765,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
         msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error\r\n");
         msdp->read_error_count++;
       } else {
+        msdp->read_success_count++;
         if( retry_count > 0 ) {
           msd_debug_err_print(msdp->chp, "Successful Block Read Retry\r\n");
         }
