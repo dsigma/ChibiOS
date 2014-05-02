@@ -629,9 +629,6 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
   if( sts & GINTSTS_USBSUSP ) {
     /*TODO Implement suspend mode*/
   }
-  if( sts & GINTSTS_OTGINT ) {
-    /*TODO Implement this*/
-  }
 
   /* Reset interrupt handling.*/
   if (sts & GINTSTS_USBRST) {
@@ -894,8 +891,8 @@ void usb_lld_start(USBDriver *usbp) {
       /* OTG HS clock enable and reset.*/
 #if STM32_USE_USB_OTG2_ULPI
       /* Note: clocks to GPIO A, B, C, H, I should be enabled by pal_lld.c for ULPI to work.*/
-      rccEnableOTG_HS(FALSE);
-      rccEnableOTG_HSULPI(FALSE);
+      rccEnableOTG_HS(TRUE);
+      rccEnableOTG_HSULPI(TRUE);
 #else
       /* Workaround for the problem described here:
          http://forum.chibios.org/phpbb/viewtopic.php?f=16&t=1798 */
@@ -1006,11 +1003,11 @@ void usb_lld_start(USBDriver *usbp) {
     otgp->DAINTMSK = 0;
     if (usbp->config->sof_cb == NULL) {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM;
+                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM;
     }
     else {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM | GINTMSK_SOFM;
+                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM;
     }
 
     otgp->GINTSTS  = 0xFFFFFFFF; /* Clears all pending IRQs, if any. */
