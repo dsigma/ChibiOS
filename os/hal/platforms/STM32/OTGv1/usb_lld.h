@@ -218,6 +218,14 @@
 #error "USB High Speed must run on the OTG2 interface"
 #endif
 
+#if STM32_USE_USB_OTG2_ULPI || STM32_USE_USB_OTG2_HS
+#if STM32_PCLK1 < 30000000
+#error "STM Manual states that the AHB bus must be at least 30mhz when running in USB High Speed Mode"
+#endif
+#if STM32_PCLK2 < 30000000
+#error "STM Manual states that the AHB bus must be at least 30mhz when running in USB High Speed Mode"
+#endif
+#endif
 
 
 
