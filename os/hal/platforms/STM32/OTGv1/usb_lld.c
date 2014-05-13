@@ -38,6 +38,9 @@
 #define TRDT_VALUE         5
 #define TRDT_HS_VALUE      9
 
+//FIXME manual says this should be calculated via equation???
+//#define MINIMUM_TRDT  ((4 * [ STM32_USBCLK / STM32_HCLK + 0.5]) + 1)
+
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -608,11 +611,29 @@ static void otg_epout_handler(USBDriver *usbp, usbep_t ep) {
  */
 static void usb_lld_serve_interrupt(USBDriver *usbp) {
   stm32_otg_t *otgp = usbp->otg;
-  uint32_t sts, src, dsts_enumspd;
+  uint32_t sts, src, dsts_enumspd, otgint_sts;
 
   sts = otgp->GINTSTS & otgp->GINTMSK;
+  if (sts & GINTSTS_OTGINT) {
+    otgint_sts = otgp->GOTGINT;
+    otgp->GOTGINT = (GOTGINT_SEDET | GOTGINT_SRSSCHG | GOTGINT_HNSSCHG | GOTGINT_HNGDET | GOTGINT_ADTOCHG | GOTGINT_DBCDNE);
+  }
   /*Writing 1's to this register clears those respective interrupt flags*/
   otgp->GINTSTS = sts;
+
+
+  if (otgint_sts & GOTGINT_SEDET) {
+  }
+  if (otgint_sts & GOTGINT_SRSSCHG) {
+  }
+  if (otgint_sts & GOTGINT_HNSSCHG) {
+  }
+  if (otgint_sts & GOTGINT_HNGDET) {
+  }
+  if (otgint_sts & GOTGINT_ADTOCHG) {
+  }
+  if (otgint_sts & GOTGINT_DBCDNE) {
+  }
 
   if (sts & GINTSTS_WKUPINT) {
     /*If clocks are gated off, turn them back on (may be the case if
@@ -625,6 +646,9 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
     /* Clear the Remote Wake-up Signaling */
     otgp->DCTL |= DCTL_RWUSIG;
   }
+
+
+
 
   if( sts & GINTSTS_USBSUSP ) {
     /*TODO Implement suspend mode*/
@@ -1003,11 +1027,11 @@ void usb_lld_start(USBDriver *usbp) {
     otgp->DAINTMSK = 0;
     if (usbp->config->sof_cb == NULL) {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM;
+                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM;
     }
     else {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM;
+                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM | GINTMSK_OTGM;
     }
 
     otgp->GINTSTS  = 0xFFFFFFFF; /* Clears all pending IRQs, if any. */
