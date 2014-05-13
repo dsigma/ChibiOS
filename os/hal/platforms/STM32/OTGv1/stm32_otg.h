@@ -234,9 +234,16 @@ typedef struct {
 #define GUSBCFG_CTXPKT          (1U<<31)    /**< Corrupt Tx packet.         */
 #define GUSBCFG_FDMOD           (1U<<30)    /**< Force Device Mode.         */
 #define GUSBCFG_FHMOD           (1U<<29)    /**< Force Host Mode.           */
+#define GUSBCFG_ULPIIPD         (1U<<25)    /**< ULPI Interface Protect Dis */
+#define GUSBCFG_PTCI            (1U<<24)    /**< Indicator Pass Through     */
+#define GUSBCFG_PCCI            (1U<<23)    /**< Indicator Compliment       */
+#define GUSBCFG_TSDPS           (1U<<22)    /**< Term Sel DLine pulsing     */
+#define GUSBCFG_ULPIEVBUSI      (1U<<21)    /**< ULPI External Vbus Indicat */
 #define GUSBCFG_ULPIEVBUSD      (1U<<20)    /**< ULPI External VBUS Drive   */
 #define GUSBCFG_ULPIICSM        (1U<<19)    /**< ULPI Clock SuspendM        */
+#define GUSBCFG_ULPIAR          (1U<<18)    /**< ULPI Auto Resume           */
 #define GUSBCFG_ULPIFSLS        (1U<<17)    /**< ULPI FS/LS Select          */
+#define GUSBCFG_PHYLPCS         (1U<<15)    /**< PHY Low Power Clock Select */
 #define GUSBCFG_TRDT_MASK       (15U<<10)   /**< USB Turnaround time field
                                                  mask.                      */
 #define GUSBCFG_TRDT(n)         ((n)<<10)   /**< USB Turnaround time field
