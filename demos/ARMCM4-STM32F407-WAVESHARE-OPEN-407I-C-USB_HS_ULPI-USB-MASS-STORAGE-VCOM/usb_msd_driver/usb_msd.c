@@ -824,12 +824,13 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
               msd_debug_err_print(msdp->chp, "Successful Block Read Retry\r\n");
             }
             read_success = TRUE;
+            msdp->read_success_count++;
             break;
           }
         }
         MSD_R_LED_OFF();
 
-        if ((!read_success)) {
+        if( !read_success ) {
           msd_debug_err_print(
                 msdp->chp, "\r\nSD Block Read Error 22, addr=%d, halting\r\n", rw_block_address);
 
@@ -1190,7 +1191,7 @@ static msg_t MassStorageThd(void *arg) {
     }
     msdp->debug_enable_msd = enable_msd;
 
-    if (enable_msd ) {
+    if ( enable_msd ) {
       msd_debug_print(msdp->chp, "state=%d\r\n", msdp->state);
       /* wait on data depending on the current state */
       switch (msdp->state) {
