@@ -809,6 +809,11 @@ typedef struct {
  * @name DIEPINT register bit definitions
  * @{
  */
+#define DIEPINT_NAK             (1U<<13)    /**< NAK interrupt.             */
+#define DIEPINT_BERR            (1U<<12)    /**< Babble error.              */
+#define DIEPINT_PKTDRPSTS       (1U<<11)    /**< Packet dropped status.     */
+#define DIEPINT_BNA             (1U<<9)     /**< Buffer not available.      */
+#define DIEPINT_TXFIFOUDRN      (1U<<8)     /**< Transmit Fifo Underrun.    */
 #define DIEPINT_TXFE            (1U<<7)     /**< Transmit FIFO empty.       */
 #define DIEPINT_INEPNE          (1U<<6)     /**< IN endpoint NAK effective. */
 #define DIEPINT_ITTXFE          (1U<<4)     /**< IN Token received when

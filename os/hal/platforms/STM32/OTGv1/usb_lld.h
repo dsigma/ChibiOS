@@ -456,6 +456,8 @@ struct USBDriver {
    * @brief   Endpoint 0 end transaction callback.
    */
   usbcallback_t                 ep0endcb;
+
+  usberrorcallback_t            ep_in_error_cb;
   /**
    * @brief   Setup packet buffer.
    */

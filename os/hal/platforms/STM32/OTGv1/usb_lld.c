@@ -560,6 +560,25 @@ static void otg_epin_handler(USBDriver *usbp, usbep_t ep) {
   if (epint & DIEPINT_TOC) {
     /* Timeouts not handled yet, not sure how to handle.*/
   }
+
+  if( usbp->ep_in_error_cb != NULL ) {
+    if (epint & DIEPINT_NAK) {/* NAK interrupt.             */
+      usbp->ep_in_error_cb(usbp, ep, DIEPINT_NAK);
+    }
+    if (epint & DIEPINT_BERR) {/* Babble error.              */
+      usbp->ep_in_error_cb(usbp, ep, DIEPINT_BERR);
+    }
+    if (epint & DIEPINT_PKTDRPSTS) {/* Packet dropped status.     */
+      usbp->ep_in_error_cb(usbp, ep, DIEPINT_PKTDRPSTS);
+    }
+    if (epint & DIEPINT_BNA) {/* Buffer not available.      */
+      usbp->ep_in_error_cb(usbp, ep, DIEPINT_BNA);
+    }
+    if (epint & DIEPINT_TXFIFOUDRN) {/* Transmit Fifo Underrun.    */
+      usbp->ep_in_error_cb(usbp, ep, DIEPINT_TXFIFOUDRN);
+    }
+  }
+
   if ((epint & DIEPINT_XFRC) && (otgp->DIEPMSK & DIEPMSK_XFRCM)) {
     /* Transmit transfer complete.*/
     _usb_isr_invoke_in_cb(usbp, ep);
@@ -620,6 +639,29 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
   }
   /*Writing 1's to this register clears those respective interrupt flags*/
   otgp->GINTSTS = sts;
+
+
+
+
+
+  /*
+   * OTG_HS_DSTS/EERR
+   * OTG_HS_DOEPMSK/OPEM
+   * OTG_HS_DOEPEACHMSK1/BERRM
+   * OTG_HS_DOEPEACHMSK1/AHBERRM
+   * OTG_HS_DIEPINTx/BERR
+   *
+   * OTG_HS_HCCHARx/MC
+   * OTG_HS_HCINTx/DTERR
+   * OTG_HS_HCINTx/FRMOR
+   * OTG_HS_HCINTx/BBERR
+   * OTG_HS_HCINTx/TXERR
+   * OTG_HS_HCINTx/AHBERR
+   * OTG_HS_HCINTx/CHH
+   *
+   */
+
+
 
 
   if (otgint_sts & GOTGINT_SEDET) {
@@ -1027,11 +1069,11 @@ void usb_lld_start(USBDriver *usbp) {
     otgp->DAINTMSK = 0;
     if (usbp->config->sof_cb == NULL) {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM;
+                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM;// | GINTMSK_OTGM;
     }
     else {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM | GINTMSK_OTGM;
+                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM;// | GINTMSK_OTGM;
     }
 
     otgp->GINTSTS  = 0xFFFFFFFF; /* Clears all pending IRQs, if any. */
