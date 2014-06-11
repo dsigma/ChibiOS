@@ -557,25 +557,31 @@ static void otg_epin_handler(USBDriver *usbp, usbep_t ep) {
 
   otgp->ie[ep].DIEPINT = epint;
 
-  if (epint & DIEPINT_TOC) {
-    /* Timeouts not handled yet, not sure how to handle.*/
-  }
+  const uint32_t dsts = otgp->DSTS;
 
   if( usbp->ep_in_error_cb != NULL ) {
+    if ( dsts & DSTS_EERR ) {
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_DSTS, DSTS_EERR);
+    }
+
+    if (epint & DIEPINT_TOC) {
+      /* Timeouts not handled yet, not sure how to handle.*/
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_TOC);
+    }
     if (epint & DIEPINT_NAK) {/* NAK interrupt.             */
-      usbp->ep_in_error_cb(usbp, ep, DIEPINT_NAK);
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_NAK);
     }
     if (epint & DIEPINT_BERR) {/* Babble error.              */
-      usbp->ep_in_error_cb(usbp, ep, DIEPINT_BERR);
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_BERR);
     }
     if (epint & DIEPINT_PKTDRPSTS) {/* Packet dropped status.     */
-      usbp->ep_in_error_cb(usbp, ep, DIEPINT_PKTDRPSTS);
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_PKTDRPSTS);
     }
     if (epint & DIEPINT_BNA) {/* Buffer not available.      */
-      usbp->ep_in_error_cb(usbp, ep, DIEPINT_BNA);
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_BNA);
     }
     if (epint & DIEPINT_TXFIFOUDRN) {/* Transmit Fifo Underrun.    */
-      usbp->ep_in_error_cb(usbp, ep, DIEPINT_TXFIFOUDRN);
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_TXFIFOUDRN);
     }
   }
 
@@ -605,9 +611,16 @@ static void otg_epin_handler(USBDriver *usbp, usbep_t ep) {
 static void otg_epout_handler(USBDriver *usbp, usbep_t ep) {
   stm32_otg_t *otgp = usbp->otg;
   uint32_t epint = otgp->oe[ep].DOEPINT;
+  const uint32_t dsts = otgp->DSTS;
 
   /* Resets all EP IRQ sources.*/
   otgp->oe[ep].DOEPINT = epint;
+
+  if (usbp->ep_out_error_cb != NULL) {
+    if ( dsts & DSTS_EERR ) {
+      usbp->ep_out_error_cb(usbp, ep, USB_ERROR_TYPE_DSTS, DSTS_EERR);
+    }
+  }
 
   if ((epint & DOEPINT_STUP) && (otgp->DOEPMSK & DOEPMSK_STUPM)) {
     /* Setup packets handling, setup packets are handled using a
@@ -640,29 +653,12 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
   /*Writing 1's to this register clears those respective interrupt flags*/
   otgp->GINTSTS = sts;
 
-
-
-
-
   /*
-   * OTG_HS_DSTS/EERR
+  fixme impliment this
    * OTG_HS_DOEPMSK/OPEM
    * OTG_HS_DOEPEACHMSK1/BERRM
    * OTG_HS_DOEPEACHMSK1/AHBERRM
-   * OTG_HS_DIEPINTx/BERR
-   *
-   * OTG_HS_HCCHARx/MC
-   * OTG_HS_HCINTx/DTERR
-   * OTG_HS_HCINTx/FRMOR
-   * OTG_HS_HCINTx/BBERR
-   * OTG_HS_HCINTx/TXERR
-   * OTG_HS_HCINTx/AHBERR
-   * OTG_HS_HCINTx/CHH
-   *
    */
-
-
-
 
   if (otgint_sts & GOTGINT_SEDET) {
   }
@@ -688,9 +684,6 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
     /* Clear the Remote Wake-up Signaling */
     otgp->DCTL |= DCTL_RWUSIG;
   }
-
-
-
 
   if( sts & GINTSTS_USBSUSP ) {
     /*TODO Implement suspend mode*/
@@ -1069,11 +1062,11 @@ void usb_lld_start(USBDriver *usbp) {
     otgp->DAINTMSK = 0;
     if (usbp->config->sof_cb == NULL) {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM;// | GINTMSK_OTGM;
+                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM;
     }
     else {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM;// | GINTMSK_OTGM;
+                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM | GINTMSK_OTGM;
     }
 
     otgp->GINTSTS  = 0xFFFFFFFF; /* Clears all pending IRQs, if any. */

@@ -304,7 +304,7 @@ typedef void (*usbcallback_t)(USBDriver *usbp);
  *                      callback
  * @param[in] errror_code  Error code data.
  */
-typedef void (*usberrorcallback_t)(USBDriver *usbp, usbep_t ep, uint32_t error_code);
+typedef void (*usberrorcallback_t)(USBDriver *usbp, usbep_t ep, uint32_t error_type, uint32_t error_code);
 
 /**
  * @brief   Type of an USB endpoint callback.

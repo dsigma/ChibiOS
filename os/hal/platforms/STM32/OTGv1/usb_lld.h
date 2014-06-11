@@ -233,6 +233,11 @@
 /* Driver data structures and types.                                         */
 /*===========================================================================*/
 
+typedef enum {
+  USB_ERROR_TYPE_EIP,
+  USB_ERROR_TYPE_DSTS,
+} endpoint_error_type_t;
+
 /**
  * @brief   Peripheral-specific parameters block.
  */
@@ -458,6 +463,7 @@ struct USBDriver {
   usbcallback_t                 ep0endcb;
 
   usberrorcallback_t            ep_in_error_cb;
+  usberrorcallback_t            ep_out_error_cb;
   /**
    * @brief   Setup packet buffer.
    */
