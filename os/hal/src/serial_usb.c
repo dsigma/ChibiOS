@@ -55,6 +55,7 @@ static cdc_linecoding_t linecoding = {
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
+
 /*
  * Interface implementation.
  */
@@ -93,7 +94,8 @@ static msg_t gett(void *ip, systime_t timeout) {
 
 static size_t writet(void *ip, const uint8_t *bp, size_t n, systime_t time) {
 
-  return chOQWriteTimeout(&((SerialUSBDriver *)ip)->oqueue, bp, n, time);
+  //return chOQWriteTimeout(&((SerialUSBDriver *)ip)->oqueue, bp, n, time);
+  return chOQWriteBatchTimeout(&((SerialUSBDriver *)ip)->oqueue, bp, n, time);
 }
 
 static size_t readt(void *ip, uint8_t *bp, size_t n, systime_t time) {

@@ -372,6 +372,77 @@ msg_t chOQGetI(OutputQueue *oqp) {
   return b;
 }
 
+
+/**
+ * @brief   Output queue write with timeout.
+ * @details The function writes data from a buffer to an output queue. The
+ *          operation completes when the specified amount of data has been
+ *          transferred or after the specified timeout or if the queue has
+ *          been reset.
+ * @note    The function is not atomic, if you need atomicity it is suggested
+ *          to use a semaphore or a mutex for mutual exclusion.
+ * @note    The callback is invoked after writing each character into the
+ *          buffer.
+ *
+ * @param[in] oqp       pointer to an @p OutputQueue structure
+ * @param[out] bp       pointer to the data buffer
+ * @param[in] n         the maximum amount of data to be transferred, the
+ *                      value 0 is reserved
+ * @param[in] time      the number of ticks before the operation timeouts,
+ *                      the following special values are allowed:
+ *                      - @a TIME_IMMEDIATE immediate timeout.
+ *                      - @a TIME_INFINITE no timeout.
+ *                      .
+ * @return              The number of bytes effectively transferred.
+ *
+ * @api
+ */
+size_t chOQWriteBatchTimeout(OutputQueue *oqp, const uint8_t *bp,
+                        size_t n, systime_t time) {
+  qnotify_t nfy = oqp->q_notify;
+  size_t w = 0;
+  bool do_notify = false;
+
+  chDbgCheck(n > 0, "chOQWriteTimeout");
+
+  chSysLock();
+  while (TRUE) {
+
+    while (chOQIsFullI(oqp)) {
+      if( do_notify ) {
+        do_notify = false;
+        nfy(oqp);
+      }
+      if (qwait((GenericQueue *)oqp, time) != Q_OK) {
+        chSysUnlock();
+        return w;
+      }
+    }
+    oqp->q_counter--;
+    *oqp->q_wrptr++ = *bp++;
+    if (oqp->q_wrptr >= oqp->q_top)
+      oqp->q_wrptr = oqp->q_buffer;
+
+    if (nfy) {
+      do_notify = true;
+      //nfy(oqp);
+    }
+
+    if( do_notify && ((n-1) == 0) ) {
+      do_notify = false;
+      nfy(oqp);
+    }
+
+
+    chSysUnlock(); /* Gives a preemption chance in a controlled point.*/
+    w++;
+    if (--n == 0) {
+      return w;
+    }
+    chSysLock();
+  }
+}
+
 /**
  * @brief   Output queue write with timeout.
  * @details The function writes data from a buffer to an output queue. The
