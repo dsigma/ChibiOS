@@ -215,22 +215,35 @@ static bool_t sdc_lld_wait_transaction_end(SDCDriver *sdcp, uint32_t n,
 static void sdc_lld_collect_errors(SDCDriver *sdcp, uint32_t sta) {
   uint32_t errors = SDC_NO_ERROR;
 
-  if (sta & SDIO_STA_CCRCFAIL)
+  if (sta & SDIO_STA_CCRCFAIL) {
     errors |= SDC_CMD_CRC_ERROR;
-  if (sta & SDIO_STA_DCRCFAIL)
-    errors |= SDC_DATA_CRC_ERROR;
-  if (sta & SDIO_STA_CTIMEOUT)
-    errors |= SDC_COMMAND_TIMEOUT;
-  if (sta & SDIO_STA_DTIMEOUT)
-    errors |= SDC_DATA_TIMEOUT;
-  if (sta & SDIO_STA_TXUNDERR)
-    errors |= SDC_TX_UNDERRUN;
-  if (sta & SDIO_STA_RXOVERR)
-    errors |= SDC_RX_OVERRUN;
-  if (sta & SDIO_STA_STBITERR)
-    errors |= SDC_STARTBIT_ERROR;
+  }
 
-  sdcp->errors |= errors;
+  if (sta & SDIO_STA_DCRCFAIL) {
+    errors |= SDC_DATA_CRC_ERROR;
+  }
+
+  if (sta & SDIO_STA_CTIMEOUT) {
+    errors |= SDC_COMMAND_TIMEOUT;
+  }
+
+  if (sta & SDIO_STA_DTIMEOUT) {
+    errors |= SDC_DATA_TIMEOUT;
+  }
+
+  if (sta & SDIO_STA_TXUNDERR) {
+    errors |= SDC_TX_UNDERRUN;
+  }
+
+  if (sta & SDIO_STA_RXOVERR) {
+    errors |= SDC_RX_OVERRUN;
+  }
+
+  if (sta & SDIO_STA_STBITERR) {
+    errors |= SDC_STARTBIT_ERROR;
+  }
+
+  sdcp->errors = errors;
 }
 
 /**
@@ -537,6 +550,7 @@ bool_t sdc_lld_send_cmd_short_crc(SDCDriver *sdcp, uint8_t cmd, uint32_t arg,
     return CH_FAILED;
   }
   *resp = SDIO->RESP1;
+
   return CH_SUCCESS;
 }
 
@@ -576,6 +590,7 @@ bool_t sdc_lld_send_cmd_long_crc(SDCDriver *sdcp, uint8_t cmd, uint32_t arg,
   *resp++ = SDIO->RESP3;
   *resp++ = SDIO->RESP2;
   *resp   = SDIO->RESP1;
+
   return CH_SUCCESS;
 }
 
@@ -783,6 +798,82 @@ bool_t sdc_lld_sync(SDCDriver *sdcp) {
 
   /* TODO: Implement.*/
   (void)sdcp;
+  return CH_SUCCESS;
+}
+
+bool_t sdc_lld_read_ext_csd(SDCDriver *sdcp, uint8_t *buf, uint32_t offset, uint32_t size)
+{
+  uint32_t resp[1];
+  uint32_t read_buf;
+  uint32_t read_offset;
+  int i;
+  uint32_t sta;
+
+  if ((sdcp->cardmode & SDC_MODE_CARDTYPE_MASK) != SDC_MODE_CARDTYPE_MMC )
+  {
+    return CH_FAILED;
+  }
+
+  SDIO->DTIMER = STM32_SDC_READ_TIMEOUT;
+
+  /* Checks for errors and waits for the card to be ready for reading.*/
+  if (_sdc_wait_for_transfer_state(sdcp))
+  {
+    return CH_FAILED;
+  }
+
+  /* Setting up data transfer.*/
+  SDIO->ICR   = STM32_SDIO_ICR_ALL_FLAGS;
+  SDIO->MASK  = 0; // do not use interrupts
+  SDIO->DLEN  = 512; // length of EXT_CSD block
+
+  /* Transaction starts just after DTEN bit setting.*/
+  SDIO->DCTRL = SDIO_DCTRL_DTDIR |
+                SDIO_DCTRL_DBLOCKSIZE_3 |
+                SDIO_DCTRL_DBLOCKSIZE_0 |
+                SDIO_DCTRL_DTEN;
+
+  if (sdc_lld_send_cmd_short_crc(sdcp, MMCSD_CMD_SEND_EXT_CSD, 0, resp) || MMCSD_R1_ERROR(resp[0]) ) 
+  {
+    SDIO->ICR = STM32_SDIO_ICR_ALL_FLAGS;
+    SDIO->DCTRL = 0;
+    return CH_FAILED;
+  }
+
+  SDIO->ICR = STM32_SDIO_ICR_ALL_FLAGS;
+
+  read_offset = 0;
+
+  while( SDIO->FIFOCNT > 0 )
+  {
+    if( SDIO->STA & SDIO_STA_RXOVERR )
+    {
+      sta = SDIO->STA;
+      SDIO->ICR = STM32_SDIO_ICR_ALL_FLAGS;
+      SDIO->DCTRL = 0;
+      sdc_lld_collect_errors(sdcp, sta);
+      return CH_FAILED;
+    }
+
+    if( SDIO->STA & SDIO_STA_RXDAVL )
+    {
+      read_buf = SDIO->FIFO; // read next 4 bytes as single word
+
+      for( i = 0; i < 4; i++ )
+      {
+        if( read_offset >= offset && read_offset < offset + size )
+        {
+          buf[ read_offset - offset ] = read_buf & 0xff;
+        }
+        read_buf >>= 8;
+        read_offset++;
+      }
+    }
+  }
+
+  SDIO->ICR = STM32_SDIO_ICR_ALL_FLAGS;
+  SDIO->DCTRL = 0;
+
   return CH_SUCCESS;
 }
 

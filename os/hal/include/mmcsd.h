@@ -45,10 +45,12 @@
 /**
  * @brief   Mask of error bits in R1 responses.
  */
-#define MMCSD_R1_ERROR_MASK             0xFDFFE008
+#define MMCSD_R1_SD_ERROR_MASK          0xFDFFE008
+
+#define MMCSD_R1_MMC_ERROR_MASK         0xFDFFE0C0
 
 /**
- * @brief   Fixed pattern for CMD8.
+ * @brief   Fixed pattern for CMD8. SD use only.
  */
 #define MMCSD_CMD8_PATTERN              0x000001AA
 
@@ -65,36 +67,68 @@
 #define MMCSD_STS_RCV                   6
 #define MMCSD_STS_PRG                   7
 #define MMCSD_STS_DIS                   8
+#define MMCSD_STS_BTST                  9 /* MMC */
+#define MMCSD_STS_SLP                   10 /* MMC */
 /** @} */
 
 /**
  * @name    SD/MMC commands
  * @{
  */
-#define MMCSD_CMD_GO_IDLE_STATE         0
-#define MMCSD_CMD_INIT                  1
-#define MMCSD_CMD_ALL_SEND_CID          2
-#define MMCSD_CMD_SEND_RELATIVE_ADDR    3
-#define MMCSD_CMD_SET_BUS_WIDTH         6
-#define MMCSD_CMD_SEL_DESEL_CARD        7
-#define MMCSD_CMD_SEND_IF_COND          8
-#define MMCSD_CMD_SEND_CSD              9
+#define MMCSD_CMD_GO_IDLE_STATE          0
+#define MMCSD_CMD_SEND_OP_COND           1 /* MMC */
+#define MMCSD_CMD_ALL_SEND_CID           2
+#define MMCSD_CMD_SEND_RELATIVE_ADDR     3
+#define MMCSD_CMD_SET_DSR                4
+#define MMCSD_CMD_SLEEP_AWAKE            5 /* MMC */
+#define MMCSD_CMD_SWITCH                 6
+#define MMCSD_CMD_SEL_DESEL_CARD         7
+#define MMCSD_CMD_SEND_IF_COND           8 /* SD */
+#define MMCSD_CMD_SEND_EXT_CSD           8 /* MMC */
+#define MMCSD_CMD_SEND_CSD               9
 #define MMCSD_CMD_SEND_CID              10
+#define MMCSD_CMD_VOLTAGE_SWITCH        11 /* SD */
+#define MMCSD_CMD_READ_DAT_UNTIL_STOP   11 /* MMC */
 #define MMCSD_CMD_STOP_TRANSMISSION     12
 #define MMCSD_CMD_SEND_STATUS           13
+#define MMCSD_CMD_BUSTEST_R             14 /* MMC */
+#define MMCSD_CMD_GO_INACTIVE_STATE     15
 #define MMCSD_CMD_SET_BLOCKLEN          16
 #define MMCSD_CMD_READ_SINGLE_BLOCK     17
 #define MMCSD_CMD_READ_MULTIPLE_BLOCK   18
+#define MMCSD_CMD_SEND_TUNING_BLOCK     19 /* SD */
+#define MMCSD_CMD_BUSTEST_W             19 /* MMC */
+#define MMCSD_CMD_SPEED_CLASS_CONTROL   20 /* SD */
+#define MMCSD_CMD_WRITE_DAT_UNTIL_STOP  20 /* MMC */
 #define MMCSD_CMD_SET_BLOCK_COUNT       23
 #define MMCSD_CMD_WRITE_BLOCK           24
 #define MMCSD_CMD_WRITE_MULTIPLE_BLOCK  25
-#define MMCSD_CMD_ERASE_RW_BLK_START    32
-#define MMCSD_CMD_ERASE_RW_BLK_END      33
+#define MMCSD_CMD_PROGRAM_CID           26 /* MMC */
+#define MMCSD_CMD_PROGRAM_CSD           27
+#define MMCSD_CMD_SET_WRITE_PROT        28
+#define MMCSD_CMD_CLR_WRITE_PROT        29
+#define MMCSD_CMD_SEND_WRITE_PROT       30
+#define MMCSD_CMD_SEND_WRITE_PROT_TYPE  31 /* MMC */
+#define MMCSD_CMD_ERASE_RW_BLK_START    32 /* SD */
+#define MMCSD_CMD_ERASE_RW_BLK_END      33 /* SD */
+#define MMCSD_CMD_ERASE_GROUP_START     35 /* MMC */
+#define MMCSD_CMD_ERASE_GROUP_END       36 /* MMC */
 #define MMCSD_CMD_ERASE                 38
-#define MMCSD_CMD_APP_OP_COND           41
+#define MMCSD_CMD_FAST_IO               39 /* MMC */
+#define MMCSD_CMD_GO_IRQ_STATE          40 /* MMC */
 #define MMCSD_CMD_LOCK_UNLOCK           42
 #define MMCSD_CMD_APP_CMD               55
-#define MMCSD_CMD_READ_OCR              58
+#define MMCSD_CMD_GEN_CMD               56
+#define MMCSD_CMD_READ_OCR              58 /* SD */
+#define MMCSD_CMD_CRC_ON_OFF            59 /* SD */
+
+#define MMCSD_ACMD_SET_BUS_WIDTH          6  /* SD */
+#define MMCSD_ACMD_SD_STATUS              13 /* SD */
+#define MMCSD_ACMD_SEND_NUM_WR_BLOCKS     22 /* SD */
+#define MMCSD_ACMD_SET_WR_BLK_ERASE_COUNT 23 /* SD */
+#define MMCSD_ACMD_SD_SEND_OP_COND        41 /* SD */
+#define MMCSD_ACMD_SET_CLR_CARD_DETECT    42 /* SD */
+#define MMCSD_ACMD_SEND_SCR               51 /* SD */
 /** @} */
 
 /**
@@ -147,18 +181,59 @@
 #define MMCSD_CSD_10_VDD_W_CURR_MAX_SLICE       52,50
 #define MMCSD_CSD_10_VDD_W_CURR_MIN_SLICE       55,53
 #define MMCSD_CSD_10_VDD_R_CURR_MAX_SLICE       58,56
-#define MMCSD_CSD_10_VDD_R_CURR_MIX_SLICE       61,59
+#define MMCSD_CSD_10_VDD_R_CURR_MIN_SLICE       61,59
 #define MMCSD_CSD_10_C_SIZE_SLICE               73,62
 #define MMCSD_CSD_10_DSR_IMP_SLICE              MMCSD_CSD_20_DSR_IMP_SLICE
 #define MMCSD_CSD_10_READ_BLK_MISALIGN_SLICE    MMCSD_CSD_20_READ_BLK_MISALIGN_SLICE
 #define MMCSD_CSD_10_WRITE_BLK_MISALIGN_SLICE   MMCSD_CSD_20_WRITE_BLK_MISALIGN_SLICE
 #define MMCSD_CSD_10_READ_BL_PARTIAL_SLICE      MMCSD_CSD_20_READ_BL_PARTIAL_SLICE
-#define MMCSD_CSD_10_READ_BL_LEN_SLICE          83, 80
+#define MMCSD_CSD_10_READ_BL_LEN_SLICE          83,80
 #define MMCSD_CSD_10_CCC_SLICE                  MMCSD_CSD_20_CCC_SLICE
 #define MMCSD_CSD_10_TRANS_SPEED_SLICE          MMCSD_CSD_20_TRANS_SPEED_SLICE
 #define MMCSD_CSD_10_NSAC_SLICE                 MMCSD_CSD_20_NSAC_SLICE
 #define MMCSD_CSD_10_TAAC_SLICE                 MMCSD_CSD_20_TAAC_SLICE
 #define MMCSD_CSD_10_STRUCTURE_SLICE            MMCSD_CSD_20_STRUCTURE_SLICE
+
+/* MMC CSD */
+#define MMCSD_CSD_MMC_CRC_SLICE                 7,1
+#define MMCSD_CSD_MMC_ECC                       9,8
+#define MMCSD_CSD_MMC_FILE_FORMAT_SLICE         11,10
+#define MMCSD_CSD_MMC_TMP_WRITE_PROTECT_SLICE   12,12
+#define MMCSD_CSD_MMC_PERM_WRITE_PROTECT_SLICE  13,13
+#define MMCSD_CSD_MMC_COPY_SLICE                14,14
+#define MMCSD_CSD_MMC_FILE_FORMAT_GRP_SLICE     15,15
+#define MMCSD_CSD_MMC_CONTENT_PROT_APP          16,16
+#define MMCSD_CSD_MMC_WRITE_BL_PARTIAL_SLICE    21,21
+#define MMCSD_CSD_MMC_WRITE_BL_LEN_SLICE        25,22
+#define MMCSD_CSD_MMC_R2W_FACTOR_SLICE          28,26
+#define MMCSD_CSD_MMC_DEFAULT_ECC               30,29
+#define MMCSD_CSD_MMC_WP_GRP_ENABLE_SLICE       31,31
+#define MMCSD_CSD_MMC_WP_GRP_SIZE_SLICE         36,32
+#define MMCSD_CSD_MMC_ERASE_GRP_MULT_SLICE      41,37
+#define MMCSD_CSD_MMC_ERASE_GRP_SIZE_SLICE      46,42
+#define MMCSD_CSD_MMC_C_SIZE_MULT_SLICE         49,47
+#define MMCSD_CSD_MMC_VDD_W_CURR_MAX_SLICE      52,50
+#define MMCSD_CSD_MMC_VDD_W_CURR_MIN_SLICE      55,53
+#define MMCSD_CSD_MMC_VDD_R_CURR_MAX_SLICE      58,56
+#define MMCSD_CSD_MMC_VDD_R_CURR_MIN_SLICE      61,59
+#define MMCSD_CSD_MMC_C_SIZE_SLICE              73,62
+#define MMCSD_CSD_MMC_DSR_IMP_SLICE             76,76
+#define MMCSD_CSD_MMC_READ_BLK_MISALIGN_SLICE   77,77
+#define MMCSD_CSD_MMC_WRITE_BLK_MISALIGN_SLICE  78,78
+#define MMCSD_CSD_MMC_READ_BL_PARTIAL_SLICE     79,79
+#define MMCSD_CSD_MMC_READ_BL_LEN_SLICE         83,80
+#define MMCSD_CSD_MMC_CCC_SLICE                 95,84
+#define MMCSD_CSD_MMC_TRANS_SPEED_SLICE         103,96
+#define MMCSD_CSD_MMC_NSAC_SLICE                111,104
+#define MMCSD_CSD_MMC_TAAC_SLICE                119,112
+#define MMCSD_CSD_MMC_SPEC_VERS                 125,122
+#define MMCSD_CSD_MMC_STRUCTURE_SLICE           127,126
+
+/* MMC EXT_CSD feilds */
+#define MMCSD_EXT_CSD_SEC_COUNT                 212
+#define MMCSD_EXT_CSD_BUS_WIDTH                 183
+
+
 /** @} */
 
 /*===========================================================================*/
@@ -227,7 +302,8 @@ typedef struct {
  *
  * @param[in] r1        the r1 response
  */
-#define MMCSD_R1_ERROR(r1)              (((r1) & MMCSD_R1_ERROR_MASK) != 0)
+#define MMCSD_R1_ERROR(r1)              (((r1) & MMCSD_R1_SD_ERROR_MASK) != 0)
+#define MMCSD_R1_MMC_ERROR(r1)          (((r1) & MMCSD_R1_MMC_ERROR_MASK) != 0)
 
 /**
  * @brief   Returns the status field of an R1 response.

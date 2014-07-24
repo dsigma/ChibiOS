@@ -474,7 +474,7 @@ bool_t mmcConnect(MMCDriver *mmcp) {
     i = 0;
     while (TRUE) {
       if ((send_command_R1(mmcp, MMCSD_CMD_APP_CMD, 0) == 0x01) &&
-          (send_command_R3(mmcp, MMCSD_CMD_APP_OP_COND,
+          (send_command_R3(mmcp, MMCSD_ACMD_SD_SEND_OP_COND,
                            0x400001aa, r3) == 0x00))
         break;
 
@@ -494,7 +494,7 @@ bool_t mmcConnect(MMCDriver *mmcp) {
   /* Initialization.*/
   i = 0;
   while (TRUE) {
-    uint8_t b = send_command_R1(mmcp, MMCSD_CMD_INIT, 0);
+    uint8_t b = send_command_R1(mmcp, MMCSD_CMD_SEND_OP_COND, 0);
     if (b == 0x00)
       break;
     if (b != 0x01)

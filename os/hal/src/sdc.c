@@ -228,8 +228,25 @@ bool_t sdcConnect(SDCDriver *sdcp) {
 
 #if SDC_MMC_SUPPORT
   if ((sdcp->cardmode &  SDC_MODE_CARDTYPE_MASK) == SDC_MODE_CARDTYPE_MMC) {
-    /* TODO: MMC initialization.*/
-    goto failed;
+    uint32_t i;
+
+    /* MMC initialization */
+    i = 0;
+    while (TRUE) {
+      if (sdc_lld_send_cmd_short(sdcp, MMCSD_CMD_SEND_OP_COND, 0x00FF8000, resp))
+        goto failed;
+
+      if ((resp[0] & 0x80000000) != 0) {
+        if (resp[0] & 0x40000000)
+          sdcp->cardmode |= SDC_MODE_HIGH_CAPACITY;
+        break;
+      }
+
+      if (++i >= SDC_INIT_RETRY)
+        goto failed;
+
+      chThdSleepMilliseconds(10);
+    }
   }
   else
 #endif /* SDC_MMC_SUPPORT */
@@ -249,7 +266,7 @@ bool_t sdcConnect(SDCDriver *sdcp) {
       if (sdc_lld_send_cmd_short_crc(sdcp, MMCSD_CMD_APP_CMD, 0, resp) ||
         MMCSD_R1_ERROR(resp[0]))
         goto failed;
-      if (sdc_lld_send_cmd_short(sdcp, MMCSD_CMD_APP_OP_COND, ocr, resp))
+      if (sdc_lld_send_cmd_short(sdcp, MMCSD_ACMD_SD_SEND_OP_COND, ocr, resp))
         goto failed;
       if ((resp[0] & 0x80000000) != 0) {
         if (resp[0] & 0x40000000)
@@ -276,9 +293,6 @@ bool_t sdcConnect(SDCDriver *sdcp) {
                                 sdcp->rca, sdcp->csd))
     goto failed;
 
-  /* Switches to high speed.*/
-  sdc_lld_set_data_clk(sdcp);
-
   /* Selects the card for operations.*/
   if (sdc_lld_send_cmd_short_crc(sdcp, MMCSD_CMD_SEL_DESEL_CARD,
                                  sdcp->rca, resp))
@@ -294,20 +308,54 @@ bool_t sdcConnect(SDCDriver *sdcp) {
   switch (sdcp->cardmode & SDC_MODE_CARDTYPE_MASK) {
   case SDC_MODE_CARDTYPE_SDV11:
   case SDC_MODE_CARDTYPE_SDV20:
+#if SDC_BUS_WIDTH == 4
     sdc_lld_set_bus_mode(sdcp, SDC_MODE_4BIT);
     if (sdc_lld_send_cmd_short_crc(sdcp, MMCSD_CMD_APP_CMD, sdcp->rca, resp) ||
         MMCSD_R1_ERROR(resp[0]))
       goto failed;
-    if (sdc_lld_send_cmd_short_crc(sdcp, MMCSD_CMD_SET_BUS_WIDTH, 2, resp) ||
+    if (sdc_lld_send_cmd_short_crc(sdcp, MMCSD_ACMD_SET_BUS_WIDTH, 2, resp) ||
         MMCSD_R1_ERROR(resp[0]))
       goto failed;
+#endif
+    break;
+  case SDC_MODE_CARDTYPE_MMC:
+    /* EXT_CSD
+     *
+     * index: MMCSD_EXT_CSD_BUS_WIDTH (183,0xB7)
+     * value: 4bit 0x01, 8bit 0x02
+     *
+     * 0x0000B70100 - 4bit
+     * 0x0000B70200 - 8bit
+     */
+#if SDC_BUS_WIDTH == 4
+    if (sdc_lld_send_cmd_short_crc(sdcp, MMCSD_CMD_SWITCH, 0x0000B70100, resp) ||
+        MMCSD_R1_MMC_ERROR(resp[0]))
+      goto failed;
+    sdc_lld_set_bus_mode(sdcp, SDC_MODE_4BIT);
+#endif
+#if SDC_BUS_WIDTH == 8
+    if (sdc_lld_send_cmd_short_crc(sdcp, MMCSD_CMD_SWITCH, 0x0000B70200, resp) ||
+        MMCSD_R1_MMC_ERROR(resp[0]))
+      goto failed;
+    sdc_lld_set_bus_mode(sdcp, SDC_MODE_8BIT);
+#endif
     break;
   }
 
+  chThdSleep(MS2ST(1));
+  
   /* Determine capacity.*/
-  sdcp->capacity = mmcsdGetCapacity(sdcp->csd);
+  if (sdcp->cardmode == (SDC_MODE_CARDTYPE_MMC | SDC_MODE_HIGH_CAPACITY)) {
+    if (sdc_lld_read_ext_csd(sdcp, (uint8_t*)&sdcp->capacity, MMCSD_EXT_CSD_SEC_COUNT, sizeof(sdcp->capacity)) == CH_FAILED)
+      goto failed;
+  } else {
+    sdcp->capacity = mmcsdGetCapacity(sdcp->csd);
+  }
   if (sdcp->capacity == 0)
     goto failed;
+
+  /* Switches to high speed.*/
+  sdc_lld_set_data_clk(sdcp);
 
   /* Initialization complete.*/
   sdcp->state = BLK_READY;

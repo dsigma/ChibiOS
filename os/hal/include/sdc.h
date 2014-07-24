@@ -80,8 +80,7 @@
 
 /**
  * @brief   Include support for MMC cards.
- * @note    MMC support is not yet implemented so this option must be kept
- *          at @p FALSE.
+ * @note    Tested with eMMC.  Older mmc cards may not work.
  */
 #if !defined(SDC_MMC_SUPPORT) || defined(__DOXYGEN__)
 #define SDC_MMC_SUPPORT                 FALSE
@@ -95,6 +94,14 @@
  */
 #if !defined(SDC_NICE_WAITING) || defined(__DOXYGEN__)
 #define SDC_NICE_WAITING                TRUE
+#endif
+
+/**
+ * @brief   Bus width for SD/MMC interface.
+ * @note    SD allowed values are 1 or 4.  MMC allowed values are 1,4,8.
+ */
+#if !defined(SDC_BUS_WIDTH) || defined(__DOXYGEN__)
+#define SDC_BUS_WIDTH                   4
 #endif
 /** @} */
 

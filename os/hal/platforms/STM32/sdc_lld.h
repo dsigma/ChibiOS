@@ -308,6 +308,8 @@ extern "C" {
   bool_t sdc_lld_sync(SDCDriver *sdcp);
   bool_t sdc_lld_is_card_inserted(SDCDriver *sdcp);
   bool_t sdc_lld_is_write_protected(SDCDriver *sdcp);
+
+  bool_t sdc_lld_read_ext_csd(SDCDriver *sdcp, uint8_t *buf, uint32_t offset, uint32_t size);
 #ifdef __cplusplus
 }
 #endif
