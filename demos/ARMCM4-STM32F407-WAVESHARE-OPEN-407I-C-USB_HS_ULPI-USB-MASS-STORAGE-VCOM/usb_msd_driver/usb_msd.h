@@ -31,12 +31,12 @@
 #if HAL_USE_MASS_STORAGE_USB || defined(__DOXYGEN__)
 
 
-#define MSD_RW_LED_ON()   palSetPad(GPIOI, GPIOI_LED4)
-#define MSD_RW_LED_OFF()  palClearPad(GPIOI, GPIOI_LED4)
-#define MSD_R_LED_ON()   palSetPad(GPIOI, GPIOI_LED3)
-#define MSD_R_LED_OFF()  palClearPad(GPIOI, GPIOI_LED3)
-#define MSD_W_LED_ON()   palSetPad(GPIOH, GPIOH_LED2)
-#define MSD_W_LED_OFF()  palClearPad(GPIOH, GPIOH_LED2)
+#define MSD_RW_LED_ON()   palSetPad(GPIOI, GPIOI_TRI_LED_BLUE)
+#define MSD_RW_LED_OFF()  palClearPad(GPIOI, GPIOI_TRI_LED_BLUE)
+#define MSD_R_LED_ON()   palSetPad(GPIOI, GPIOI_TRI_LED_BLUE)
+#define MSD_R_LED_OFF()  palClearPad(GPIOI, GPIOI_TRI_LED_BLUE)
+#define MSD_W_LED_ON()   palSetPad(GPIOH, GPIOI_TRI_LED_BLUE)
+#define MSD_W_LED_OFF()  palClearPad(GPIOH, GPIOI_TRI_LED_BLUE)
 
 
 #if STM32_USB_USE_OTG2 && STM32_USE_USB_OTG2_HS
