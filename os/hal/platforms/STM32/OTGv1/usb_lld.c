@@ -38,6 +38,9 @@
 #define TRDT_VALUE         5
 #define TRDT_HS_VALUE      9
 
+//FIXME manual says this should be calculated via equation???
+//#define MINIMUM_TRDT  ((4 * [ STM32_USBCLK / STM32_HCLK + 0.5]) + 1)
+
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -554,9 +557,34 @@ static void otg_epin_handler(USBDriver *usbp, usbep_t ep) {
 
   otgp->ie[ep].DIEPINT = epint;
 
-  if (epint & DIEPINT_TOC) {
-    /* Timeouts not handled yet, not sure how to handle.*/
+  const uint32_t dsts = otgp->DSTS;
+
+  if( usbp->ep_in_error_cb != NULL ) {
+    if ( dsts & DSTS_EERR ) {
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_DSTS, DSTS_EERR);
+    }
+
+    if (epint & DIEPINT_TOC) {
+      /* Timeouts not handled yet, not sure how to handle.*/
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_TOC);
+    }
+    if (epint & DIEPINT_NAK) {/* NAK interrupt.             */
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_NAK);
+    }
+    if (epint & DIEPINT_BERR) {/* Babble error.              */
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_BERR);
+    }
+    if (epint & DIEPINT_PKTDRPSTS) {/* Packet dropped status.     */
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_PKTDRPSTS);
+    }
+    if (epint & DIEPINT_BNA) {/* Buffer not available.      */
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_BNA);
+    }
+    if (epint & DIEPINT_TXFIFOUDRN) {/* Transmit Fifo Underrun.    */
+      usbp->ep_in_error_cb(usbp, ep, USB_ERROR_TYPE_EIP, DIEPINT_TXFIFOUDRN);
+    }
   }
+
   if ((epint & DIEPINT_XFRC) && (otgp->DIEPMSK & DIEPMSK_XFRCM)) {
     /* Transmit transfer complete.*/
     _usb_isr_invoke_in_cb(usbp, ep);
@@ -583,9 +611,16 @@ static void otg_epin_handler(USBDriver *usbp, usbep_t ep) {
 static void otg_epout_handler(USBDriver *usbp, usbep_t ep) {
   stm32_otg_t *otgp = usbp->otg;
   uint32_t epint = otgp->oe[ep].DOEPINT;
+  const uint32_t dsts = otgp->DSTS;
 
   /* Resets all EP IRQ sources.*/
   otgp->oe[ep].DOEPINT = epint;
+
+  if (usbp->ep_out_error_cb != NULL) {
+    if ( dsts & DSTS_EERR ) {
+      usbp->ep_out_error_cb(usbp, ep, USB_ERROR_TYPE_DSTS, DSTS_EERR);
+    }
+  }
 
   if ((epint & DOEPINT_STUP) && (otgp->DOEPMSK & DOEPMSK_STUPM)) {
     /* Setup packets handling, setup packets are handled using a
@@ -608,11 +643,35 @@ static void otg_epout_handler(USBDriver *usbp, usbep_t ep) {
  */
 static void usb_lld_serve_interrupt(USBDriver *usbp) {
   stm32_otg_t *otgp = usbp->otg;
-  uint32_t sts, src, dsts_enumspd;
+  uint32_t sts, src, dsts_enumspd, otgint_sts;
 
   sts = otgp->GINTSTS & otgp->GINTMSK;
+  if (sts & GINTSTS_OTGINT) {
+    otgint_sts = otgp->GOTGINT;
+    otgp->GOTGINT = (GOTGINT_SEDET | GOTGINT_SRSSCHG | GOTGINT_HNSSCHG | GOTGINT_HNGDET | GOTGINT_ADTOCHG | GOTGINT_DBCDNE);
+  }
   /*Writing 1's to this register clears those respective interrupt flags*/
   otgp->GINTSTS = sts;
+
+  /*
+  fixme impliment this
+   * OTG_HS_DOEPMSK/OPEM
+   * OTG_HS_DOEPEACHMSK1/BERRM
+   * OTG_HS_DOEPEACHMSK1/AHBERRM
+   */
+
+  if (otgint_sts & GOTGINT_SEDET) {
+  }
+  if (otgint_sts & GOTGINT_SRSSCHG) {
+  }
+  if (otgint_sts & GOTGINT_HNSSCHG) {
+  }
+  if (otgint_sts & GOTGINT_HNGDET) {
+  }
+  if (otgint_sts & GOTGINT_ADTOCHG) {
+  }
+  if (otgint_sts & GOTGINT_DBCDNE) {
+  }
 
   if (sts & GINTSTS_WKUPINT) {
     /*If clocks are gated off, turn them back on (may be the case if
@@ -627,7 +686,7 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
   }
 
   if( sts & GINTSTS_USBSUSP ) {
-      /*TODO Implement suspend mode*/
+    /*TODO Implement suspend mode*/
   }
 
   /* Reset interrupt handling.*/
@@ -891,9 +950,15 @@ void usb_lld_start(USBDriver *usbp) {
       /* OTG HS clock enable and reset.*/
 #if STM32_USE_USB_OTG2_ULPI
       /* Note: clocks to GPIO A, B, C, H, I should be enabled by pal_lld.c for ULPI to work.*/
-      rccEnableAHB1(RCC_AHB1ENR_OTGHSULPIEN, FALSE);
-#endif
+      rccEnableOTG_HS(TRUE);
+      rccEnableOTG_HSULPI(TRUE);
+#else
+      /* Workaround for the problem described here:
+         http://forum.chibios.org/phpbb/viewtopic.php?f=16&t=1798 */
+      rccDisableOTG_HSULPI(TRUE);
       rccEnableOTG_HS(FALSE);
+#endif
+
       rccResetOTG_HS();
 
       /* Enables IRQ vector.*/
@@ -958,7 +1023,12 @@ void usb_lld_start(USBDriver *usbp) {
     }
     else {
       /* Internal FS PHY activation.*/
+#if defined(BOARD_OTG_NOVBUSSENS)
+      otgp->GCCFG = GCCFG_NOVBUSSENS | GCCFG_VBUSASEN | GCCFG_VBUSBSEN |
+                  GCCFG_PWRDWN;
+#else
       otgp->GCCFG = GCCFG_VBUSASEN | GCCFG_VBUSBSEN | GCCFG_PWRDWN;
+#endif
     }
 #else
     /* Internal FS PHY activation.*/
@@ -992,13 +1062,14 @@ void usb_lld_start(USBDriver *usbp) {
     otgp->DAINTMSK = 0;
     if (usbp->config->sof_cb == NULL) {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM;
+                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM;
     }
     else {
       otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM;
+                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM | GINTMSK_OTGM;
     }
-    otgp->GINTSTS  = 0xFFFFFFFF;         /* Clears all pending IRQs, if any. */
+
+    otgp->GINTSTS  = 0xFFFFFFFF; /* Clears all pending IRQs, if any. */
 
 
 

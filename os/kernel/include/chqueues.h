@@ -359,6 +359,8 @@ extern "C" {
   msg_t chOQGetI(OutputQueue *oqp);
   size_t chOQWriteTimeout(OutputQueue *oqp, const uint8_t *bp,
                           size_t n, systime_t time);
+  size_t chOQWriteBatchTimeout(OutputQueue *oqp, const uint8_t *bp,
+                          size_t n, systime_t time);
 #ifdef __cplusplus
 }
 #endif

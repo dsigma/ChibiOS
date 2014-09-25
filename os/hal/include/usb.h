@@ -78,6 +78,12 @@
 #define USB_EARLY_SET_ADDRESS               0
 #define USB_LATE_SET_ADDRESS                1
 
+#define USB_EP0_STATUS_STAGE_SW             0
+#define USB_EP0_STATUS_STAGE_HW             1
+
+#define USB_SET_ADDRESS_ACK_SW              0
+#define USB_SET_ADDRESS_ACK_HW              1
+
 /**
  * @name    Helper macros for USB descriptors
  * @{
@@ -290,6 +296,15 @@ typedef struct {
  *                      callback
  */
 typedef void (*usbcallback_t)(USBDriver *usbp);
+
+/**
+ * @brief   Type of an USB generic error notification callback.
+ *
+ * @param[in] usbp      pointer to the @p USBDriver object triggering the
+ *                      callback
+ * @param[in] errror_code  Error code data.
+ */
+typedef void (*usberrorcallback_t)(USBDriver *usbp, usbep_t ep, uint32_t error_type, uint32_t error_code);
 
 /**
  * @brief   Type of an USB endpoint callback.

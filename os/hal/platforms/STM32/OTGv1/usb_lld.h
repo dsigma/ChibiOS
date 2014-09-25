@@ -43,6 +43,11 @@
 #endif
 
 /**
+ * @brief   Status stage handling method.
+ */
+#define USB_EP0_STATUS_STAGE                USB_EP0_STATUS_STAGE_SW
+
+/**
  * @brief   The address can be changed immediately upon packet reception.
  */
 #define USB_SET_ADDRESS_MODE                USB_EARLY_SET_ADDRESS
@@ -213,12 +218,25 @@
 #error "USB High Speed must run on the OTG2 interface"
 #endif
 
+#if STM32_USE_USB_OTG2_ULPI || STM32_USE_USB_OTG2_HS
+#if STM32_PCLK1 < 30000000
+#error "STM Manual states that the AHB bus must be at least 30mhz when running in USB High Speed Mode"
+#endif
+#if STM32_PCLK2 < 30000000
+#error "STM Manual states that the AHB bus must be at least 30mhz when running in USB High Speed Mode"
+#endif
+#endif
 
 
 
 /*===========================================================================*/
 /* Driver data structures and types.                                         */
 /*===========================================================================*/
+
+typedef enum {
+  USB_ERROR_TYPE_EIP,
+  USB_ERROR_TYPE_DSTS,
+} endpoint_error_type_t;
 
 /**
  * @brief   Peripheral-specific parameters block.
@@ -443,6 +461,9 @@ struct USBDriver {
    * @brief   Endpoint 0 end transaction callback.
    */
   usbcallback_t                 ep0endcb;
+
+  usberrorcallback_t            ep_in_error_cb;
+  usberrorcallback_t            ep_out_error_cb;
   /**
    * @brief   Setup packet buffer.
    */

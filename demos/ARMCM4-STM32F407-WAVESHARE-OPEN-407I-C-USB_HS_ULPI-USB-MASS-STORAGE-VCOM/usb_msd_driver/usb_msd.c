@@ -83,8 +83,7 @@
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
-static WORKING_AREA(waMassStorage, 1024);
-static WORKING_AREA(waMassStorageUSBTransfer, 1024);
+
 
 static msg_t MassStorageUSBTransferThd(void *arg);
 static msg_t MassStorageThd(void *arg);
@@ -292,13 +291,13 @@ usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp) {
   /*upon entry, USB bus should be disconnected*/
 
   if (msdThd == NULL) {
-    msdThd = chThdCreateStatic(waMassStorage, sizeof(waMassStorage), NORMALPRIO,
+    msdThd = chThdCreateStatic(msdp->waMassStorage, sizeof(msdp->waMassStorage), NORMALPRIO,
                                MassStorageThd, msdp);
   }
 
   if (msdUSBTransferThd == NULL) {
-    msdUSBTransferThd = chThdCreateStatic(waMassStorageUSBTransfer,
-                                          sizeof(waMassStorageUSBTransfer),
+    msdUSBTransferThd = chThdCreateStatic(msdp->waMassStorageUSBTransfer,
+                                          sizeof(msdp->waMassStorageUSBTransfer),
                                           NORMALPRIO, MassStorageUSBTransferThd,
                                           msdp);
   }
@@ -721,6 +720,8 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
 
         MSD_W_LED_OFF();
         return (MSD_WAIT_MODE_NONE);
+      } else {
+        msdp->write_success_count++;
       }
       msd_debug_nest_print(msdp->chp, "e");
       MSD_W_LED_OFF();
@@ -764,6 +765,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
         msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error\r\n");
         msdp->read_error_count++;
       } else {
+        msdp->read_success_count++;
         if( retry_count > 0 ) {
           msd_debug_err_print(msdp->chp, "Successful Block Read Retry\r\n");
         }
@@ -822,12 +824,13 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
               msd_debug_err_print(msdp->chp, "Successful Block Read Retry\r\n");
             }
             read_success = TRUE;
+            msdp->read_success_count++;
             break;
           }
         }
         MSD_R_LED_OFF();
 
-        if ((!read_success)) {
+        if( !read_success ) {
           msd_debug_err_print(
                 msdp->chp, "\r\nSD Block Read Error 22, addr=%d, halting\r\n", rw_block_address);
 
@@ -1186,8 +1189,9 @@ static msg_t MassStorageThd(void *arg) {
     if( msdp->driver_state != USB_MSD_DRIVER_OK ) {
       enable_msd = false;
     }
+    msdp->debug_enable_msd = enable_msd;
 
-    if (enable_msd ) {
+    if ( enable_msd ) {
       msd_debug_print(msdp->chp, "state=%d\r\n", msdp->state);
       /* wait on data depending on the current state */
       switch (msdp->state) {
@@ -1214,14 +1218,35 @@ static msg_t MassStorageThd(void *arg) {
       }
     }
 
-    msd_debug_nest_print(msdp->chp, "J");
-   if (wait_for_isr && (!msdp->reconfigured_or_reset_event)) {
+    msdp->debug_wait_for_isr = wait_for_isr;
+
+    if( enable_msd ) {
+      msd_debug_nest_print(msdp->chp, "L");
+    } else {
+      msd_debug_nest_print(msdp->chp, "M");
+    }
+
+    if (wait_for_isr) {
+      msd_debug_nest_print(msdp->chp, "J");
+    } else {
+      msd_debug_nest_print(msdp->chp, "K");
+    }
+
+    if (wait_for_isr && (!msdp->reconfigured_or_reset_event)) {
       /* wait until the ISR wakes thread */
       msd_debug_print(msdp->chp, "W%d,%d", wait_for_isr, msdp->state);
       msdWaitForISR(msdp, TRUE, wait_for_isr);
       msd_debug_print(msdp->chp, "w\r\n");
+    } else if( ! enable_msd ) {
+      chThdSleepMilliseconds(5);
     }
-   msd_debug_nest_print(msdp->chp, "j");
+
+
+    if (wait_for_isr) {
+      msd_debug_nest_print(msdp->chp, "j");
+    } else {
+      msd_debug_nest_print(msdp->chp, "k");
+    }
   }
 
   return 0;

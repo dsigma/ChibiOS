@@ -234,9 +234,16 @@ typedef struct {
 #define GUSBCFG_CTXPKT          (1U<<31)    /**< Corrupt Tx packet.         */
 #define GUSBCFG_FDMOD           (1U<<30)    /**< Force Device Mode.         */
 #define GUSBCFG_FHMOD           (1U<<29)    /**< Force Host Mode.           */
+#define GUSBCFG_ULPIIPD         (1U<<25)    /**< ULPI Interface Protect Dis */
+#define GUSBCFG_PTCI            (1U<<24)    /**< Indicator Pass Through     */
+#define GUSBCFG_PCCI            (1U<<23)    /**< Indicator Compliment       */
+#define GUSBCFG_TSDPS           (1U<<22)    /**< Term Sel DLine pulsing     */
+#define GUSBCFG_ULPIEVBUSI      (1U<<21)    /**< ULPI External Vbus Indicat */
 #define GUSBCFG_ULPIEVBUSD      (1U<<20)    /**< ULPI External VBUS Drive   */
 #define GUSBCFG_ULPIICSM        (1U<<19)    /**< ULPI Clock SuspendM        */
+#define GUSBCFG_ULPIAR          (1U<<18)    /**< ULPI Auto Resume           */
 #define GUSBCFG_ULPIFSLS        (1U<<17)    /**< ULPI FS/LS Select          */
+#define GUSBCFG_PHYLPCS         (1U<<15)    /**< PHY Low Power Clock Select */
 #define GUSBCFG_TRDT_MASK       (15U<<10)   /**< USB Turnaround time field
                                                  mask.                      */
 #define GUSBCFG_TRDT(n)         ((n)<<10)   /**< USB Turnaround time field
@@ -311,6 +318,8 @@ typedef struct {
  * @name GINTMSK register bit definitions
  * @{
  */
+
+/**< Reserved, leave at reset value */
 #define GINTMSK_WKUM            (1U<<31)    /**< Resume/remote wakeup
                                                  detected interrupt mask.   */
 #define GINTMSK_SRQM            (1U<<30)    /**< Session request/New session
@@ -800,6 +809,11 @@ typedef struct {
  * @name DIEPINT register bit definitions
  * @{
  */
+#define DIEPINT_NAK             (1U<<13)    /**< NAK interrupt.             */
+#define DIEPINT_BERR            (1U<<12)    /**< Babble error.              */
+#define DIEPINT_PKTDRPSTS       (1U<<11)    /**< Packet dropped status.     */
+#define DIEPINT_BNA             (1U<<9)     /**< Buffer not available.      */
+#define DIEPINT_TXFIFOUDRN      (1U<<8)     /**< Transmit Fifo Underrun.    */
 #define DIEPINT_TXFE            (1U<<7)     /**< Transmit FIFO empty.       */
 #define DIEPINT_INEPNE          (1U<<6)     /**< IN endpoint NAK effective. */
 #define DIEPINT_ITTXFE          (1U<<4)     /**< IN Token received when

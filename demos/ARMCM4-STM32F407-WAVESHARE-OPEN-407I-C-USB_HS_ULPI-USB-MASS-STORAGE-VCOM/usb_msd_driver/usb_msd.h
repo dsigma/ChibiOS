@@ -31,12 +31,12 @@
 #if HAL_USE_MASS_STORAGE_USB || defined(__DOXYGEN__)
 
 
-#define MSD_RW_LED_ON()   palSetPad(GPIOI, GPIOI_LED4)
-#define MSD_RW_LED_OFF()  palClearPad(GPIOI, GPIOI_LED4)
-#define MSD_R_LED_ON()   palSetPad(GPIOI, GPIOI_LED3)
-#define MSD_R_LED_OFF()  palClearPad(GPIOI, GPIOI_LED3)
-#define MSD_W_LED_ON()   palSetPad(GPIOH, GPIOH_LED2)
-#define MSD_W_LED_OFF()  palClearPad(GPIOH, GPIOH_LED2)
+#define MSD_RW_LED_ON()   palSetPad(GPIOI, GPIOI_TRI_LED_BLUE)
+#define MSD_RW_LED_OFF()  palClearPad(GPIOI, GPIOI_TRI_LED_BLUE)
+#define MSD_R_LED_ON()   palSetPad(GPIOI, GPIOI_TRI_LED_BLUE)
+#define MSD_R_LED_OFF()  palClearPad(GPIOI, GPIOI_TRI_LED_BLUE)
+#define MSD_W_LED_ON()   palSetPad(GPIOH, GPIOI_TRI_LED_BLUE)
+#define MSD_W_LED_OFF()  palClearPad(GPIOH, GPIOI_TRI_LED_BLUE)
 
 
 #if STM32_USB_USE_OTG2 && STM32_USE_USB_OTG2_HS
@@ -45,6 +45,7 @@
 #  define USB_MS_EP_SIZE 64
 #endif
 
+#define MSD_THREAD_STACK_SIZE     1024
 
 #define MSD_REQ_RESET		0xFF
 #define MSD_GET_MAX_LUN		0xFE
@@ -217,8 +218,12 @@ struct USBMassStorageDriver {
     BaseSequentialStream *chp; /*For debug logging*/
 
     /* Externally readable values */
-    uint32_t read_error_count;
-    uint32_t write_error_count;
+    volatile uint32_t read_error_count;
+    volatile uint32_t write_error_count;
+    volatile uint32_t read_success_count;
+    volatile uint32_t write_success_count;
+    volatile bool_t debug_enable_msd;
+    volatile msd_wait_mode_t debug_wait_for_isr;
 
     /*Internal data for operation of the driver */
     BinarySemaphore bsem;
@@ -248,6 +253,9 @@ struct USBMassStorageDriver {
     bool_t command_succeeded_flag;
     bool_t stall_in_endpoint;
     bool_t stall_out_endpoint;
+
+    WORKING_AREA(waMassStorage, MSD_THREAD_STACK_SIZE);
+    WORKING_AREA(waMassStorageUSBTransfer, MSD_THREAD_STACK_SIZE);
 };
 
 

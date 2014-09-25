@@ -89,8 +89,39 @@
 *****************************************************************************
 
 *** 2.7.0 ***
+- FIX: Fixed invalid cast in PWM_FRACTION_TO_WIDTH() macro (bug #487)
+  (backported to 2.4.6 and 2.6.4).
+- FIX: Fixed wrong STM32 TIM9 clock source in PWM and ICU drivers (bug #486)
+  (backported to 2.6.4).
+- FIX: Fixed MMC_SPI driver block_addresses is not initialized after
+  reconnection (bug #485)(backported to 2.6.4).
+- FIX: Fixed STM32L1 Plus Compilation Problems (bug #484)(backported to 2.6.4).
+- FIX: Fixed OTG HS failure when WFI instruction is enabled (bug #482)
+  (backported to 2.6.4).
+- FIX: Fixed wrong STM32F4 TIM6 vector number symbol (bug #480)
+  (backported to 2.6.4).
+- FIX: Fixed problem in STM32 SDADC driver initialization (bug #479)
+  (backported to 2.6.4).
+- FIX: Fixed chThdShouldTerminate() documentation incorrect (bug #478)
+  (backported to 2.6.4).
+- FIX: Fixed spurious callback in STM32 EXT driver (bug #477)(backported
+  to 2.6.4).
+- FIX: Fixed several macro errors in STM32L1xx HAL driver (bug #476)
+  (backported to 2.6.4).
+- FIX: Fixed wrong STM32 RTCv2 alarms implementation (bug #475)(backported
+  to 2.6.4).
+- FIX: Fixed wrong ADC34 macros in STM32F30x HAL driver (bug #474)
+  (backported to 2.6.4).
+- FIX: Fixed wrong TIM1 and TIM8 macros in STM32F30x HAL driver (bug #473)
+  (backported to 2.6.4).
+- FIX: Fixed chprintf()/chSequentialStreamWrite() crash with size of 0
+  or NULL (bug #472)(backported to 2.6.4).
+- FIX: Fixed STM32 SDC driver clock activation issue (bug #464)(backported to
+- FIX: Fixed simulated IO message is corrupted in simulator (bug #468)
+  (backported to 2.6.4).
 - FIX: Fixed TM32 SDC driver clock activation issue (bug #464)(backported to
   2.6.3).
+- FIX: Fixed can_lld.c referencing unknown type (bug #463).
 - FIX: Fixed spurious callback in ICU driver (bug #461)(backported to 2.6.3
   and 2.4.6).
 - FIX: Fixed compile error in STM32F0xx ADC driver when STM32F0XX_LD devices
@@ -189,6 +220,7 @@
 - NEW: Added CAN driver for AT91SAM7.
 - CHANGE: Moved the STM32 GPT, ICU and PWM low level drivers under
   ./os/hal/platform/STM32/TIMv1. Updated all the impacted project files.
+- CHANGE: Made optional the STM32 MAC DMABMR SR reset procedure.
 
 *** 2.5.2 ***
 - FIX: Fixed lwipthread.h should explicitly include lwip/opts.h (bug #414).

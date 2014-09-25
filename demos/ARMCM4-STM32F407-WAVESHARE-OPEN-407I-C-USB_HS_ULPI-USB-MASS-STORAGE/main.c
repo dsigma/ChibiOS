@@ -87,6 +87,7 @@ int main(void) {
   halInit();
   chSysInit();
 
+
   /*
    * Activates the serial driver 2 and SDC driver 1 using default
    * configuration.
@@ -108,15 +109,23 @@ int main(void) {
    */
   init_sd();
   chprintf(chp, "done starting SDC\r\n");
-  sdcConnect(&SDCD1);
+  const bool_t sdcConnectStatus = sdcConnect(&SDCD1);
+  if( sdcConnectStatus != CH_SUCCESS ) {
+    chprintf(chp, "failed to connect to SD Card, sdcConnectStatus = %u\r\n", sdcConnectStatus);
+    for(;;) {
+      chThdSleepMilliseconds(3000);
+    }
+  }
 
   BaseBlockDevice *bbdp = (BaseBlockDevice*)&SDCD1;
-  chprintf(chp, "setting up MSD\r\n");
+  chprintf(chp, "setting up MSD, sdcConnectStatus = %u\r\n", sdcConnectStatus);
   static USBMassStorageDriver UMSD1;
 
   const usb_msd_driver_state_t msd_driver_state = msdInit(usb_driver, bbdp, &UMSD1, USB_MS_DATA_EP, USB_MSD_INTERFACE_NUMBER);
   if( msd_driver_state != USB_MSD_DRIVER_OK ) {
     chprintf(chp, "Error initing USB MSD, %d %s\r\n", msd_driver_state, usb_msd_driver_state_t_to_str(msd_driver_state));
+  } else {
+    chprintf(chp, "Successfully initialized MSD\r\n");
   }
   UMSD1.chp = chp;
 
