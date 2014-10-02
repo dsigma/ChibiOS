@@ -150,6 +150,18 @@
 #endif
 
 /**
+ * @brief   PWMD12 driver enable switch.
+ * @details If set to @p TRUE the support for PWMD12 is included.
+ * @note    The default is @p TRUE.
+ */
+#if !defined(STM32_PWM_USE_TIM12) || defined(__DOXYGEN__)
+#define STM32_PWM_USE_TIM12                  FALSE
+#if STM32_PWM_USE_TIM9
+#  error "Cannot use TIM9 and TIM12 concurrently due to interrupt limitations"
+#endif
+#endif
+
+/**
  * @brief   PWMD1 interrupt priority level setting.
  */
 #if !defined(STM32_PWM_TIM1_IRQ_PRIORITY) || defined(__DOXYGEN__)
@@ -232,6 +244,10 @@
 #error "TIM9 not present in the selected device"
 #endif
 
+#if STM32_PWM_USE_TIM12 && !STM32_HAS_TIM12
+#error "TIM12 not present in the selected device"
+#endif
+
 #if !STM32_PWM_USE_TIM1 && !STM32_PWM_USE_TIM2 &&                           \
     !STM32_PWM_USE_TIM3 && !STM32_PWM_USE_TIM4 &&                           \
     !STM32_PWM_USE_TIM5 && !STM32_PWM_USE_TIM8 &&                           \
@@ -276,6 +292,11 @@
 #if STM32_PWM_USE_TIM9 &&                                                   \
     !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_PWM_TIM9_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to TIM9"
+#endif
+
+#if STM32_PWM_USE_TIM12 &&                                                   \
+    !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_PWM_TIM12_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to TIM12"
 #endif
 
 /*===========================================================================*/
@@ -457,6 +478,10 @@ extern PWMDriver PWMD8;
 
 #if STM32_PWM_USE_TIM9 && !defined(__DOXYGEN__)
 extern PWMDriver PWMD9;
+#endif
+
+#if STM32_PWM_USE_TIM12 && !defined(__DOXYGEN__)
+extern PWMDriver PWMD12;
 #endif
 
 #ifdef __cplusplus
