@@ -232,9 +232,15 @@ void stm32_clock_init(void) {
     ;
 #endif
 
+#if STM32_RCC_DCKCFGR_TIMPRE_FLAG
+  RCC->DCKCFGR |= RCC_DCKCFGR_TIMPRE;
+#endif
+
   /* Other clock-related settings (dividers, MCO etc).*/
   RCC->CFGR = STM32_MCO2PRE | STM32_MCO2SEL | STM32_MCO1PRE | STM32_MCO1SEL |
               STM32_RTCPRE | STM32_PPRE2 | STM32_PPRE1 | STM32_HPRE;
+
+
 
   /* Flash setup.*/
 #if defined(STM32_USE_REVISION_A_FIX)

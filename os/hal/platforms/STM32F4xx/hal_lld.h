@@ -1697,19 +1697,39 @@
 /**
  * @brief   Timers 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14 clock.
  */
-#if (STM32_PPRE1 == STM32_PPRE1_DIV1) || defined(__DOXYGEN__)
-#define STM32_TIMCLK1               (STM32_PCLK1 * 1)
+
+#if STM32_RCC_DCKCFGR_TIMPRE_FLAG
+# if (STM32_PPRE1 == STM32_PPRE1_DIV1) || (STM32_PPRE1 == STM32_PPRE1_DIV2) || (STM32_PPRE1 == STM32_PPRE1_DIV4) || defined(__DOXYGEN__)
+#  define STM32_TIMCLK1               (STM32_HCLK)
+# else
+#  define STM32_TIMCLK1               (STM32_PCLK1 * 4)
+# endif
 #else
-#define STM32_TIMCLK1               (STM32_PCLK1 * 2)
+# if (STM32_PPRE1 == STM32_PPRE1_DIV1) || defined(__DOXYGEN__)
+#  define STM32_TIMCLK1               (STM32_PCLK1 * 1)
+# else
+#  define STM32_TIMCLK1               (STM32_PCLK1 * 2)
+# endif
 #endif
+
+
+
 
 /**
  * @brief   Timers 1, 8 clock.
  */
-#if (STM32_PPRE2 == STM32_PPRE2_DIV1) || defined(__DOXYGEN__)
-#define STM32_TIMCLK2               (STM32_PCLK2 * 1)
+#if STM32_RCC_DCKCFGR_TIMPRE_FLAG
+# if (STM32_PPRE2 == STM32_PPRE2_DIV1) || (STM32_PPRE2 == STM32_PPRE2_DIV2) || (STM32_PPRE2 == STM32_PPRE2_DIV4) || defined(__DOXYGEN__)
+#  define STM32_TIMCLK2               (STM32_HCLK)
+# else
+#  define STM32_TIMCLK2               (STM32_PCLK2 * 4)
+# endif
 #else
-#define STM32_TIMCLK2               (STM32_PCLK2 * 2)
+# if (STM32_PPRE2 == STM32_PPRE2_DIV1) || defined(__DOXYGEN__)
+#  define STM32_TIMCLK2               (STM32_PCLK2 * 1)
+# else
+#  define STM32_TIMCLK2               (STM32_PCLK2 * 2)
+# endif
 #endif
 
 /**

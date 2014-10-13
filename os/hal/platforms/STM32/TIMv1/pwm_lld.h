@@ -156,10 +156,23 @@
  */
 #if !defined(STM32_PWM_USE_TIM12) || defined(__DOXYGEN__)
 #define STM32_PWM_USE_TIM12                  FALSE
-#if STM32_PWM_USE_TIM9
+#endif
+
+
+#if !defined(STM32_PWM_USE_TIM14) || defined(__DOXYGEN__)
+#define STM32_PWM_USE_TIM14                  FALSE
+#endif
+
+#if STM32_PWM_USE_TIM9 & STM32_PWM_USE_TIM12
 #  error "Cannot use TIM9 and TIM12 concurrently due to interrupt limitations"
 #endif
+#if STM32_PWM_USE_TIM9 & STM32_PWM_USE_TIM14
+#  error "Cannot use TIM9 and TIM14 concurrently due to interrupt limitations"
 #endif
+#if STM32_PWM_USE_TIM12 & STM32_PWM_USE_TIM14
+#  error "Cannot use TIM12 and TIM14 concurrently due to interrupt limitations"
+#endif
+
 
 /**
  * @brief   PWMD1 interrupt priority level setting.
@@ -212,6 +225,22 @@
 #endif
 /** @} */
 
+/**
+ * @brief   PWMD9 interrupt priority level setting.
+ */
+#if !defined(STM32_PWM_TIM12_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_PWM_TIM12_IRQ_PRIORITY         7
+#endif
+/** @} */
+
+/**
+ * @brief   PWMD14 interrupt priority level setting.
+ */
+#if !defined(STM32_PWM_TIM14_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_PWM_TIM14_IRQ_PRIORITY         7
+#endif
+/** @} */
+
 /*===========================================================================*/
 /* Configuration checks.                                                     */
 /*===========================================================================*/
@@ -246,6 +275,10 @@
 
 #if STM32_PWM_USE_TIM12 && !STM32_HAS_TIM12
 #error "TIM12 not present in the selected device"
+#endif
+
+#if STM32_PWM_USE_TIM14 && !STM32_HAS_TIM14
+#error "TIM14 not present in the selected device"
 #endif
 
 #if !STM32_PWM_USE_TIM1 && !STM32_PWM_USE_TIM2 &&                           \
@@ -296,6 +329,11 @@
 
 #if STM32_PWM_USE_TIM12 &&                                                   \
     !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_PWM_TIM12_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to TIM12"
+#endif
+
+#if STM32_PWM_USE_TIM14 &&                                                   \
+    !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_PWM_TIM14_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to TIM12"
 #endif
 
@@ -482,6 +520,10 @@ extern PWMDriver PWMD9;
 
 #if STM32_PWM_USE_TIM12 && !defined(__DOXYGEN__)
 extern PWMDriver PWMD12;
+#endif
+
+#if STM32_PWM_USE_TIM14 && !defined(__DOXYGEN__)
+extern PWMDriver PWMD14;
 #endif
 
 #ifdef __cplusplus

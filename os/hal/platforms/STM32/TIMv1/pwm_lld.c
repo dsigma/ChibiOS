@@ -99,6 +99,14 @@ PWMDriver PWMD9;
 PWMDriver PWMD12;
 #endif
 
+/**
+ * @brief   PWMD14 driver identifier.
+ * @note    The driver PWMD14 allocates the timer TIM14 when enabled.
+ */
+#if STM32_PWM_USE_TIM14 || defined(__DOXYGEN__)
+PWMDriver PWMD14;
+#endif
+
 
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
@@ -109,7 +117,7 @@ PWMDriver PWMD12;
 /*===========================================================================*/
 
 #if STM32_PWM_USE_TIM2 || STM32_PWM_USE_TIM3 || STM32_PWM_USE_TIM4 ||       \
-    STM32_PWM_USE_TIM5 || STM32_PWM_USE_TIM9 || STM32_PWM_USE_TIM12 || defined(__DOXYGEN__)
+    STM32_PWM_USE_TIM5 || STM32_PWM_USE_TIM9 || STM32_PWM_USE_TIM12 || STM32_PWM_USE_TIM14 || defined(__DOXYGEN__)
 /**
  * @brief   Common TIM2...TIM5,TIM9 IRQ handler.
  * @note    It is assumed that the various sources are only activated if the
@@ -347,7 +355,7 @@ CH_IRQ_HANDLER(STM32_TIM9_HANDLER) {
 #error "STM32_TIM12_HANDLER not defined"
 #endif
 /**
- * @brief   TIM9 interrupt handler.
+ * @brief   TIM12 interrupt handler.
  *
  * @isr
  */
@@ -360,6 +368,25 @@ CH_IRQ_HANDLER(STM32_TIM12_HANDLER) {
   CH_IRQ_EPILOGUE();
 }
 #endif /* STM32_PWM_USE_TIM12 */
+
+#if STM32_PWM_USE_TIM14
+#if !defined(STM32_TIM14_HANDLER)
+#error "STM32_TIM14_HANDLER not defined"
+#endif
+/**
+ * @brief   TIM14 interrupt handler.
+ *
+ * @isr
+ */
+CH_IRQ_HANDLER(STM32_TIM14_HANDLER) {
+
+  CH_IRQ_PROLOGUE();
+
+  pwm_lld_serve_interrupt(&PWMD14);
+
+  CH_IRQ_EPILOGUE();
+}
+#endif /* STM32_PWM_USE_TIM14 */
 
 /*===========================================================================*/
 /* Driver exported functions.                                                */
@@ -418,6 +445,12 @@ void pwm_lld_init(void) {
   /* Driver initialization.*/
   pwmObjectInit(&PWMD12);
   PWMD12.tim = STM32_TIM12;
+#endif
+
+#if STM32_PWM_USE_TIM14
+  /* Driver initialization.*/
+  pwmObjectInit(&PWMD14);
+  PWMD14.tim = STM32_TIM14;
 #endif
 }
 
@@ -519,7 +552,17 @@ void pwm_lld_start(PWMDriver *pwmp) {
       rccResetTIM12();
       nvicEnableVector(STM32_TIM12_NUMBER,
                        CORTEX_PRIORITY_MASK(STM32_PWM_TIM12_IRQ_PRIORITY));
-      pwmp->clock = STM32_TIMCLK2;
+      pwmp->clock = STM32_TIMCLK1;
+    }
+#endif
+
+#if STM32_PWM_USE_TIM14
+    if (&PWMD14 == pwmp) {
+      rccEnableTIM14(FALSE);
+      rccResetTIM14();
+      nvicEnableVector(STM32_TIM12_NUMBER,
+                       CORTEX_PRIORITY_MASK(STM32_PWM_TIM12_IRQ_PRIORITY));
+      pwmp->clock = STM32_TIMCLK1;
     }
 #endif
 
@@ -705,6 +748,12 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD12 == pwmp) {
       nvicDisableVector(STM32_TIM12_NUMBER);
       rccDisableTIM12(FALSE);
+    }
+#endif
+#if STM32_PWM_USE_TIM14
+    if (&PWMD14 == pwmp) {
+      nvicDisableVector(STM32_TIM14_NUMBER);
+      rccDisableTIM14(FALSE);
     }
 #endif
 
