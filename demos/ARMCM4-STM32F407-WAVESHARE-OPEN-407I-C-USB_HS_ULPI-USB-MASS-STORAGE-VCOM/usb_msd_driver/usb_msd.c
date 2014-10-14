@@ -762,7 +762,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
     for (retry_count = 0; retry_count < 3; retry_count++) {
       if (blkRead(msdp->bbdp, rw_block_address, read_buffer[i % 2], 1)
           == CH_FAILED) {
-        msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error\r\n");
+        msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error: block # %u\r\n", rw_block_address);
         msdp->read_error_count++;
       } else {
         msdp->read_success_count++;
@@ -776,7 +776,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
 
 
     if ((!read_success) ) {
-      msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error 1, breaking read sequence\r\n");
+      msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error 1, breaking read sequence, block # %u\r\n", rw_block_address);
 
       /*wait for printing to finish*/
       chThdSleepMilliseconds(10);
@@ -816,12 +816,12 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
         for (retry_count = 0; retry_count < 3; retry_count++) {
           if (blkRead(msdp->bbdp, rw_block_address, read_buffer[(i+1) % 2], 1)
               == CH_FAILED) {
-            msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error 2\r\n");
+            msd_debug_err_print(msdp->chp, "\r\nSD Block Read Error 2: block # %u\r\n", rw_block_address);
 
             msdp->read_error_count++;
           } else {
             if( retry_count > 0 ) {
-              msd_debug_err_print(msdp->chp, "Successful Block Read Retry\r\n");
+              msd_debug_err_print(msdp->chp, "Successful Block Read Retry: block # %u\r\n", rw_block_address);
             }
             read_success = TRUE;
             msdp->read_success_count++;
@@ -1033,8 +1033,13 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
         msd_debug_print(msdp->chp, "CMD_STOP\r\n");
         wait_mode = SCSICommandStartStopUnit(msdp);
         break;
+      case SCSI_CMD_SYNCHRONIZE_CACHE_10:
+        msd_debug_print(msdp->chp, "CMD_SYNCHRONIZE_CACHE_10\r\n");
+        //FIXME impliment this and flush data to the MMC card, Linux sends this command. We are implicitly synchronized
+        //in our writes since we never leave data in RAM
+        //break;
       default:
-        msd_debug_err_print(msdp->chp, "CMD default 0x%X\r\n", cbw->scsi_cmd_data[0]);
+        msd_debug_err_print(msdp->chp, "CMD Unknown: 0x%X, using default CMD handler\r\n", cbw->scsi_cmd_data[0]);
         msdp->command_succeeded_flag = false;
         SCSISetSense(msdp, SCSI_SENSE_KEY_ILLEGAL_REQUEST,
                      SCSI_ASENSE_INVALID_COMMAND, SCSI_ASENSEQ_NO_QUALIFIER);

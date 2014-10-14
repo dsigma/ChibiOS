@@ -73,6 +73,7 @@ typedef enum {
     SCSI_CMD_READ_10                        = 0x28,
     SCSI_CMD_WRITE_10                       = 0x2A,
     SCSI_CMD_VERIFY_10                      = 0x2F,
+    SCSI_CMD_SYNCHRONIZE_CACHE_10           = 0x35,
 } msd_scsi_command_t;
 
 
