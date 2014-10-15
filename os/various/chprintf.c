@@ -119,6 +119,9 @@ static char *ftoa(char *p, double num, const unsigned long precision_param) {
  * @api
  */
 void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
+  if( chp == NULL ) {
+    return;
+  }
   char *p, *s, c, filler;
   int i, precision = 0, width;
   bool_t is_long, left_align;
