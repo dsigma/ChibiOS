@@ -226,6 +226,12 @@ __attribute__((weak))
 #endif
 void __early_init(void) {}
 
+
+#if !defined(__DOXYGEN__)
+__attribute__((weak))
+#endif
+void __reset_handler_hook(void) {}
+
 /**
  * @brief   Late initialization.
  * @details This hook is invoked after the DATA and BSS segments
@@ -261,12 +267,17 @@ __attribute__((naked))
 void ResetHandler(void) {
   uint32_t psp, reg;
 
+  /* Make sure the stack pointer is setup before calling any functions, as they use the stack! */
+  __reset_handler_hook();
+
   /* Process Stack initialization, it is allocated starting from the
      symbol __process_stack_end__ and its lower limit is the symbol
      __process_stack_base__.*/
   asm volatile ("cpsid   i");
   psp = SYMVAL(__process_stack_end__);
   asm volatile ("msr     PSP, %0" : : "r" (psp));
+
+
 
 #if CORTEX_USE_FPU
   /* Initializing the FPU context save in lazy mode.*/
