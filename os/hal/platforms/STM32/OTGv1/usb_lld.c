@@ -36,10 +36,10 @@
 /*===========================================================================*/
 
 #define TRDT_VALUE         5
-#define TRDT_HS_VALUE      9
+#define TRDT_HS_VALUE      5
 
 //FIXME manual says this should be calculated via equation???
-//#define MINIMUM_TRDT  ((4 * [ STM32_USBCLK / STM32_HCLK + 0.5]) + 1)
+//#define MINIMUM_TRDT  ((4 * ( (STM32_USBCLK / STM32_HCLK) + 0.5)) + 1)
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -982,7 +982,7 @@ void usb_lld_start(USBDriver *usbp) {
        - USB turn-around time = TRDT_VALUE. */
 #if STM32_USE_USB_OTG2_ULPI
     /* High speed ULPI PHY */
-    otgp->GUSBCFG = GUSBCFG_FDMOD |  GUSBCFG_TRDT(TRDT_VALUE) | GUSBCFG_SRPCAP | GUSBCFG_HNPCAP;
+    otgp->GUSBCFG = GUSBCFG_FDMOD |  GUSBCFG_TRDT(TRDT_HS_VALUE) | GUSBCFG_SRPCAP | GUSBCFG_HNPCAP;
 #else
     /* - Full Speed 1.1 PHY.*/
     otgp->GUSBCFG = GUSBCFG_FDMOD | GUSBCFG_TRDT(TRDT_VALUE) | GUSBCFG_PHYSEL;
