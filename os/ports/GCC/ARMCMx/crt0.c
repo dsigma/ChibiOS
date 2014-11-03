@@ -267,9 +267,6 @@ __attribute__((naked))
 void ResetHandler(void) {
   uint32_t psp, reg;
 
-  /* Make sure the stack pointer is setup before calling any functions, as they use the stack! */
-  __reset_handler_hook();
-
   /* Process Stack initialization, it is allocated starting from the
      symbol __process_stack_end__ and its lower limit is the symbol
      __process_stack_base__.*/
@@ -277,6 +274,9 @@ void ResetHandler(void) {
   psp = SYMVAL(__process_stack_end__);
   asm volatile ("msr     PSP, %0" : : "r" (psp));
 
+
+  /* Make sure the stack pointer is setup before calling any functions, as they use the stack! */
+  __reset_handler_hook();
 
 
 #if CORTEX_USE_FPU
