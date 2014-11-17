@@ -107,6 +107,7 @@ DSTATUS disk_status (
 
 /*-----------------------------------------------------------------------*/
 /* Read Sector(s)                                                        */
+extern void sdcard_log_disk_read_time(const systime_t now_time, const systime_t start_time);
 
 DRESULT disk_read (
     BYTE drv,        /* Physical drive nmuber (0..) */
@@ -115,6 +116,8 @@ DRESULT disk_read (
     UINT count        /* Number of sectors to read (1..255) */
 )
 {
+  const systime_t start_time = chTimeNow();
+
   switch (drv) {
 #if HAL_USE_MMC_SPI
   case MMC:
@@ -137,6 +140,9 @@ DRESULT disk_read (
       return RES_NOTRDY;
     if (sdcRead(&SDCD1, sector, buff, count))
       return RES_ERROR;
+
+    const systime_t end_time = chTimeNow();
+    sdcard_log_disk_read_time(end_time, start_time);
     return RES_OK;
 #endif
   }
@@ -147,6 +153,7 @@ DRESULT disk_read (
 
 /*-----------------------------------------------------------------------*/
 /* Write Sector(s)                                                       */
+extern void sdcard_log_disk_write_time(const systime_t now_time, const systime_t start_time);
 
 #if _READONLY == 0
 DRESULT disk_write (
@@ -156,6 +163,7 @@ DRESULT disk_write (
     UINT count            /* Number of sectors to write (1..255) */
 )
 {
+  const systime_t start_time = chTimeNow();
   switch (drv) {
 #if HAL_USE_MMC_SPI
   case MMC:
@@ -180,6 +188,11 @@ DRESULT disk_write (
       return RES_NOTRDY;
     if (sdcWrite(&SDCD1, sector, buff, count))
       return RES_ERROR;
+
+    const systime_t end_time = chTimeNow();
+
+    sdcard_log_disk_write_time(end_time, start_time);
+
     return RES_OK;
 #endif
   }
