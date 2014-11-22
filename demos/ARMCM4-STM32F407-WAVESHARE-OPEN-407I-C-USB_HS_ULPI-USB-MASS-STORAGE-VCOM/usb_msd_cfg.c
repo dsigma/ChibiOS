@@ -49,6 +49,8 @@ extern SerialUSBDriver SDU1;
 #define COMMUNICATIONS_INTERFACE_CLASS    0x02
 #define ABSTRACT_CONTROL_SUB_CLASS        0x02
 #define AT_CDC_INTERFACE_PROTOCOL         0x01
+//Note: If this is not correct the Call Management section MacOS will refuse to load drivers
+#define CDC_DATA_INTERFACE_NUMBER         0x01
 
 
 
@@ -129,7 +131,7 @@ static const uint8_t msd_configuration_descriptor_data[] = {
     USB_DESC_BYTE (0x24), /* bDescriptorType (CS_INTERFACE).  */
     USB_DESC_BYTE (0x01), /* bDescriptorSubtype (Call Management Functional Descriptor).          */
     USB_DESC_BYTE (0x00), /* bmCapabilities (D0+D1).          */
-    USB_DESC_BYTE (0x02), /* bDataInterface.                  */
+    USB_DESC_BYTE (CDC_DATA_INTERFACE_NUMBER), /* bDataInterface.                  */
     /* ACM Functional Descriptor.*/
     USB_DESC_BYTE (4), /* bFunctionLength.                 */
     USB_DESC_BYTE (0x24), /* bDescriptorType (CS_INTERFACE).  */
@@ -148,7 +150,7 @@ static const uint8_t msd_configuration_descriptor_data[] = {
             USB_CDC_INTERUPT_INTERVAL), /* bInterval.                       */
 
     /* Interface Descriptor. */
-    USB_DESC_INTERFACE (0x01, /* bInterfaceNumber.                */
+    USB_DESC_INTERFACE (CDC_DATA_INTERFACE_NUMBER, /* bInterfaceNumber.                */
             0x00, /* bAlternateSetting.               */
             0x02, /* bNumEndpoints.                   */
             0x0A, /* bInterfaceClass (Data Class Interface, CDC section 4.5).     */
