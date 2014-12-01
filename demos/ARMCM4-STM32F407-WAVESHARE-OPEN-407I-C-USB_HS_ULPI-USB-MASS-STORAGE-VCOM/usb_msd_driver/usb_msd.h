@@ -119,6 +119,7 @@ typedef enum {
 #define SCSI_ASENSE_MEDIUM_NOT_PRESENT                   0x3A
 
 #define SCSI_ASENSEQ_NO_QUALIFIER                        0x00
+#define SCSI_ASENSEQ_PEREPHERIAL_DEVICE_WRITE_FAULT      0x00
 #define SCSI_ASENSEQ_FORMAT_COMMAND_FAILED               0x01
 #define SCSI_ASENSEQ_INITIALIZING_COMMAND_REQUIRED       0x02
 #define SCSI_ASENSEQ_OPERATION_IN_PROGRESS               0x07
@@ -263,6 +264,10 @@ struct USBMassStorageDriver {
     bool_t command_succeeded_flag;
     bool_t stall_in_endpoint;
     bool_t stall_out_endpoint;
+
+    char *msd_thread_state;
+    char *transfer_thread_state;
+    char *scsi_command_state;
 
     WORKING_AREA(waMassStorage, MSD_THREAD_STACK_SIZE);
     WORKING_AREA(waMassStorageUSBTransfer, MSD_THREAD_STACK_SIZE);
