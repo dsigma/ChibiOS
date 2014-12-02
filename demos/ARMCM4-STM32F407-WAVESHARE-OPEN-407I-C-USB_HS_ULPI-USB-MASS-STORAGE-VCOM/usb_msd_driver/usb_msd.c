@@ -716,18 +716,22 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
         chThdSleepMilliseconds(50);
         msdp->write_error_count++;
 
-#define OLD_WRITE_ERROR_HANDLING    FALSE
         msdp->command_succeeded_flag = false;
 
-#if OLD_WRITE_ERROR_HANDLING
-        I think that this mode of error handling is incorrect, and was causing ACM0 usb device resets in the event of EMMC write errors.
-        msdp->stall_out_endpoint = true;
-#endif
         SCSISetSense(msdp, SCSI_SENSE_KEY_MEDIUM_ERROR,
-                     SCSI_ASENSE_PEREPHERIAL_DEVICE_WRITE_FAULT,
-                     SCSI_ASENSEQ_PEREPHERIAL_DEVICE_WRITE_FAULT);
+                             SCSI_ASENSE_PEREPHERIAL_DEVICE_WRITE_FAULT,
+                             SCSI_ASENSEQ_PEREPHERIAL_DEVICE_WRITE_FAULT);
 
+
+#define OLD_WRITE_ERROR_HANDLING    FALSE
 #if OLD_WRITE_ERROR_HANDLING
+        /*
+         * I think that this mode of error handling is incorrect, and was causing ACM0 usb device resets in the event of EMMC write errors.
+         * I confirmed using the Beagle USB 480 analyzer that the host gets a failed staus, and retries the write to the given error block, at which point the block write succeeds for thist test case.
+         * This code should be purged at some point
+        */
+        msdp->stall_out_endpoint = true;
+
         if (queue_another_transfer) {
           /*Let the previous queued transfer finish and ignore it.*/
           WaitForUSBTransferComplete(msdp, empty_buffer_index);
