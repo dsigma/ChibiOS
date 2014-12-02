@@ -90,7 +90,7 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        $(CHIBIOS)/os/various/chprintf.c \
        $(CHIBIOS)/os/various/shell.c \
-       usb_msd_driver/usb_msd.c \
+       ../ARMCM4-STM32F407-WAVESHARE-OPEN-407I-C-USB_HS_ULPI-USB-MASS-STORAGE-VCOM/usb_msd_driver/usb_msd.c \
        usb_msd_cfg.c \
        main.c
 
@@ -125,7 +125,7 @@ INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
          $(FATFSINC) \
          $(CHIBIOS)/os/various \
-         ./usb_msd_driver
+         ../ARMCM4-STM32F407-WAVESHARE-OPEN-407I-C-USB_HS_ULPI-USB-MASS-STORAGE-VCOM/usb_msd_driver/
 
 #
 # Project, sources and paths
