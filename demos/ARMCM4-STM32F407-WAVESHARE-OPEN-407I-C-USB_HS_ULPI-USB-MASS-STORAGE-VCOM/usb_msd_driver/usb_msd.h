@@ -222,19 +222,12 @@ struct USBMassStorageDriver {
     usbep_t  ms_ep_number;
     uint16_t msd_interface_number;
     bool_t (*enable_msd_callback)(void);
+    bool_t (*suspend_threads_callback)(void);
 
     /* Externally modifiable settings */
     bool_t enable_media_removial;
     bool_t disable_usb_bus_disconnect_on_eject;
     BaseSequentialStream *chp; /*For debug logging*/
-
-    /* Externally readable values */
-    volatile uint32_t read_error_count;
-    volatile uint32_t write_error_count;
-    volatile uint32_t read_success_count;
-    volatile uint32_t write_success_count;
-    volatile bool_t debug_enable_msd;
-    volatile msd_wait_mode_t debug_wait_for_isr;
 
     /*Internal data for operation of the driver */
     BinarySemaphore bsem;
@@ -253,7 +246,6 @@ struct USBMassStorageDriver {
       scsi_inquiry_response_t scsi_inquiry_response;
     } data;
 
-
     msd_state_t state;
     msd_cbw_t cbw;
     msd_csw_t csw;
@@ -265,9 +257,20 @@ struct USBMassStorageDriver {
     bool_t stall_in_endpoint;
     bool_t stall_out_endpoint;
 
+
+    /*Debugging Information*/
+    volatile uint32_t read_error_count;
+    volatile uint32_t write_error_count;
+    volatile uint32_t read_success_count;
+    volatile uint32_t write_success_count;
     char *msd_thread_state;
     char *transfer_thread_state;
     char *scsi_command_state;
+    volatile uint8_t last_bad_scsi_command;
+
+    /* Externally readable values */
+    volatile bool_t debug_enable_msd;
+    volatile msd_wait_mode_t debug_wait_for_isr;
 
     WORKING_AREA(waMassStorage, MSD_THREAD_STACK_SIZE);
     WORKING_AREA(waMassStorageUSBTransfer, MSD_THREAD_STACK_SIZE);

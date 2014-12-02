@@ -1076,8 +1076,8 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
         msdp->scsi_command_state = "CMD_STOP-Done";
         break;
       case SCSI_CMD_SYNCHRONIZE_CACHE_10:
-        msdp->scsi_command_state = "CMD_SYNCHRONIZE_CACHE_10";
-        msd_debug_print(msdp->chp, "CMD_SYNCHRONIZE_CACHE_10\r\n");
+        msdp->scsi_command_state = "SYNC_10";
+        msd_debug_print(msdp->chp, "SYNC_10\r\n");
         //FIXME impliment this and flush data to the MMC card, Linux sends this command. We are implicitly synchronized
         //in our writes since we never leave data in RAM
 
@@ -1085,15 +1085,18 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
                      SCSI_ASENSE_NO_ADDITIONAL_INFORMATION, SCSI_ASENSEQ_NO_QUALIFIER);
         wait_mode = MSD_WAIT_MODE_NONE;
 
-        msdp->scsi_command_state = "CMD_SYNCHRONIZE_CACHE_10-Done";
+        msdp->scsi_command_state = "SYNC_10-Done";
         break;
       default:
+        msdp->last_bad_scsi_command = cbw->scsi_cmd_data[0];
+
         msdp->scsi_command_state = "CMD_Def";
         msd_debug_err_print(msdp->chp, "CMD Unknown: 0x%X, using default CMD handler\r\n", cbw->scsi_cmd_data[0]);
         msdp->command_succeeded_flag = false;
         SCSISetSense(msdp, SCSI_SENSE_KEY_ILLEGAL_REQUEST,
                      SCSI_ASENSE_INVALID_COMMAND, SCSI_ASENSEQ_NO_QUALIFIER);
 
+#if 0
         /* stall IN endpoint */
         chSysLock()
         msdp->bulk_in_interupt_flag = false;
@@ -1101,10 +1104,16 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
         chSysUnlock()
 
         msdWaitForISR(msdp, TRUE, MSD_WAIT_MODE_BULK_IN);
+#else
+        //msdp->stall_out_endpoint = true;
+        //msdp->stall_in_endpoint = true;
+#endif
 
         msdp->scsi_command_state = "CMD_Def-Done";
         cbw->data_len = 0;
+#if 0
         return MSD_WAIT_MODE_NONE;
+#endif
     }
   }
 
@@ -1201,9 +1210,16 @@ static msd_wait_mode_t msdProcessCommandBlock(USBMassStorageDriver *msdp) {
 static msg_t MassStorageUSBTransferThd(void *arg) {
   USBMassStorageDriver *msdp = (USBMassStorageDriver *)arg;
 
-  chRegSetThreadName("USB-MSD-Transfer");
+  chRegSetThreadName("MSD-Transfer");
 
   for (;;) {
+    if (msdp->suspend_threads_callback != NULL && msdp->suspend_threads_callback()) {
+      /* Suspend the thread for power savings mode */
+      chSysLock();
+      chSchGoSleepS(THD_STATE_SUSPENDED);
+      chSysUnlock();
+    }
+
     if (msdp->trigger_transfer_index != UINT32_MAX) {
       msdp->transfer_thread_state = "PP";
       SCSIWriteTransferPingPong(
@@ -1223,7 +1239,7 @@ static msg_t MassStorageUSBTransferThd(void *arg) {
 
 static msg_t MassStorageThd(void *arg) {
   USBMassStorageDriver *msdp = (USBMassStorageDriver *)arg;
-  chRegSetThreadName("USB-MSD");
+  chRegSetThreadName("MSD");
 
   msd_wait_mode_t wait_for_isr = MSD_WAIT_MODE_NONE;
 
@@ -1233,6 +1249,14 @@ static msg_t MassStorageThd(void *arg) {
   msd_debug_print(msdp->chp, "y");
 
   while (TRUE) {
+
+    if( msdp->suspend_threads_callback != NULL && msdp->suspend_threads_callback() ) {
+      /* Suspend the thread for power savings mode */
+      chSysLock();
+      chSchGoSleepS(THD_STATE_SUSPENDED);
+      chSysUnlock();
+    }
+
     wait_for_isr = MSD_WAIT_MODE_NONE;
 
     if (msdp->reconfigured_or_reset_event) {
