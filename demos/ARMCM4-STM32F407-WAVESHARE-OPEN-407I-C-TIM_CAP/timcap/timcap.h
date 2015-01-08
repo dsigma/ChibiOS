@@ -195,6 +195,7 @@ extern "C" {
   void timcapStop(TIMCAPDriver *timcapp);
   void timcapEnable(TIMCAPDriver *timcapp);
   void timcapDisable(TIMCAPDriver *timcapp);
+  const char* timcapstate_t_to_str(const timcapstate_t v);
 #ifdef __cplusplus
 }
 #endif

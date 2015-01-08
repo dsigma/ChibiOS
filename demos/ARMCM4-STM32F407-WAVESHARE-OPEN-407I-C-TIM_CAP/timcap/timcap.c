@@ -154,6 +154,27 @@ void timcapDisable(TIMCAPDriver *timcapp) {
   chSysUnlock();
 }
 
+
+
+const char* timcapstate_t_to_str(const timcapstate_t v) {
+  switch (v) {
+    case TIMCAP_UNINIT:
+      return ("UNINIT");
+    case TIMCAP_STOP:
+      return ("STOP");
+    case TIMCAP_READY:
+      return ("READY");
+    case TIMCAP_WAITING:
+      return ("WAITING");
+    case TIMCAP_ACTIVE:
+      return ("ACTIVE");
+    case TIMCAP_IDLE:
+      return ("IDLE");
+  }
+  return ("???");
+}
+
+
 #endif /* HAL_USE_TIMCAP */
 
 /** @} */
