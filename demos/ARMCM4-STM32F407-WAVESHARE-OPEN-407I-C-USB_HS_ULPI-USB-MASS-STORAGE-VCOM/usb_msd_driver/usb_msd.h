@@ -206,6 +206,7 @@ typedef enum {
   USB_MSD_DRIVER_UNINITIALIZED = 0,
   USB_MSD_DRIVER_ERROR,
   USB_MSD_DRIVER_OK,
+  USB_MSD_DRIVER_STOPPED,
   USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY,
 } usb_msd_driver_state_t;
 
@@ -282,6 +283,7 @@ extern "C" {
 #endif
 usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassStorageDriver *msdp, const usbep_t ms_ep_number, const uint16_t msd_interface_number);
 usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp);
+usb_msd_driver_state_t msdStop(USBMassStorageDriver *msdp);
 void msdBulkInCallbackComplete(USBDriver *usbp, usbep_t ep);
 void msdBulkOutCallbackComplete(USBDriver *usbp, usbep_t ep);
 bool_t msdRequestsHook(USBDriver *usbp);

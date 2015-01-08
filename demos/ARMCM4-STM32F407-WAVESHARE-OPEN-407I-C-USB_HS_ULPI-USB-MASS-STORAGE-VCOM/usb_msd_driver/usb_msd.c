@@ -295,18 +295,51 @@ usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassSt
 usb_msd_driver_state_t msdStart(USBMassStorageDriver *msdp) {
   /*upon entry, USB bus should be disconnected*/
 
-  if (msdThd == NULL) {
+  if (msdThd == NULL ) {
     msdThd = chThdCreateStatic(msdp->waMassStorage, sizeof(msdp->waMassStorage), NORMALPRIO,
                                MassStorageThd, msdp);
   }
 
-  if (msdUSBTransferThd == NULL) {
+  if (msdUSBTransferThd == NULL  ) {
     msdUSBTransferThd = chThdCreateStatic(msdp->waMassStorageUSBTransfer,
                                           sizeof(msdp->waMassStorageUSBTransfer),
                                           NORMALPRIO, MassStorageUSBTransferThd,
                                           msdp);
   }
 
+  return(msdp->driver_state);
+}
+
+usb_msd_driver_state_t msdStop(USBMassStorageDriver *msdp) {
+  usb_msd_driver_state_t final_state = USB_MSD_DRIVER_STOPPED;
+
+  if (msdThd != NULL) {
+    chThdTerminate(msdThd);
+    for(int i = 0; i < 20 && msdThd->p_state != THD_STATE_FINAL; i++ ) {
+      chThdSleepMilliseconds(20);
+    }
+
+    if( msdThd->p_state == THD_STATE_FINAL ) {
+      final_state = USB_MSD_DRIVER_ERROR;
+    }
+    msdThd = NULL;
+  }
+
+
+  if (msdUSBTransferThd == NULL) {
+    chThdTerminate(msdUSBTransferThd);
+    for(int i = 0; i < 20 && msdUSBTransferThd->p_state != THD_STATE_FINAL; i++ ) {
+      chThdSleepMilliseconds(20);
+    }
+
+    if( msdUSBTransferThd->p_state == THD_STATE_FINAL ) {
+      final_state = USB_MSD_DRIVER_ERROR;
+    }
+    msdUSBTransferThd = NULL;
+  }
+
+
+  msdp->driver_state = final_state;
   return(msdp->driver_state);
 }
 
@@ -391,6 +424,8 @@ const char* usb_msd_driver_state_t_to_str(const usb_msd_driver_state_t driver_st
       return ("USB_MSD_DRIVER_ERROR");
     case USB_MSD_DRIVER_OK:
       return ("USB_MSD_DRIVER_OK");
+    case USB_MSD_DRIVER_STOPPED:
+      return("USB_MSD_DRIVER_STOPPED");
     case USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY:
       return ("USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY");
   }
@@ -425,6 +460,10 @@ static uint8_t msdWaitForISR(USBMassStorageDriver *msdp, const bool_t check_rese
 
     if (check_reset && msdp->reconfigured_or_reset_event) {
       ret = WAIT_ISR_BUSS_RESET_OR_RECONNECT;
+      break;
+    }
+
+    if( chThdShouldTerminate() ) {
       break;
     }
   }
@@ -1212,7 +1251,7 @@ static msg_t MassStorageUSBTransferThd(void *arg) {
 
   chRegSetThreadName("MSD-Transfer");
 
-  for (;;) {
+  while ( !chThdShouldTerminate() ) {
     if (msdp->suspend_threads_callback != NULL && msdp->suspend_threads_callback()) {
       /* Suspend the thread for power savings mode */
       chSysLock();
@@ -1248,14 +1287,17 @@ static msg_t MassStorageThd(void *arg) {
   msdWaitForISR(msdp, FALSE, MSD_WAIT_MODE_NONE);
   msd_debug_print(msdp->chp, "y");
 
-  while (TRUE) {
+  while ( !chThdShouldTerminate() ) {
 
+#if 0
     if( msdp->suspend_threads_callback != NULL && msdp->suspend_threads_callback() ) {
       /* Suspend the thread for power savings mode */
       chSysLock();
       chSchGoSleepS(THD_STATE_SUSPENDED);
       chSysUnlock();
     }
+#endif
+
 
     wait_for_isr = MSD_WAIT_MODE_NONE;
 
