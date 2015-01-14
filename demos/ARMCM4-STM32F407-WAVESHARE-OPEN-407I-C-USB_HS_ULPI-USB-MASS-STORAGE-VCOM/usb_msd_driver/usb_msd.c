@@ -260,25 +260,21 @@ usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassSt
   /* make sure block device is working and get info */
   msdSetDefaultSenseKey(msdp);
 
-  const uint32_t max_init_wait_time_ms = 2000;
-  const uint32_t sleep_time_ms = 50;
-  uint32_t sleep_time_counter_ms = 0;
-
-  while (TRUE) {
+  const uint32_t sleep_ms = 50;
+  for(uint32_t t = 0; t <= 2000; t += sleep_ms ) {
     blkstate_t state = blkGetDriverState(bbdp);
     if (state == BLK_READY) {
       break;
     }
 
-    chThdSleepMilliseconds(sleep_time_ms);
-    sleep_time_counter_ms += sleep_time_counter_ms;
-    if( sleep_time_counter_ms > max_init_wait_time_ms ) {
-      msdp->driver_state = USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY;
-      break;
-    }
+    chThdSleepMilliseconds(sleep_ms);
   }
 
-  blkGetInfo(bbdp, &msdp->block_dev_info);
+  if( blkGetDriverState(bbdp) == BLK_READY ) {
+    blkGetInfo(bbdp, &msdp->block_dev_info);
+  } else {
+    msdp->driver_state = USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY;
+  }
 
   usbp->in_params[ms_ep_number - 1] = (void *)msdp;
 
