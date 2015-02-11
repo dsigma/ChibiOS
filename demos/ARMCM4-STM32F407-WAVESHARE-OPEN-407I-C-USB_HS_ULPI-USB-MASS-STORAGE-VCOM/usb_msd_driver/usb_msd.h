@@ -219,6 +219,7 @@ struct USBMassStorageDriver {
 	EventSource evt_connected;
 	EventSource evt_ejected;
 	BlockDeviceInfo block_dev_info;
+	bool block_dev_info_valid_flag;
 	usb_msd_driver_state_t driver_state;
     usbep_t  ms_ep_number;
     uint16_t msd_interface_number;

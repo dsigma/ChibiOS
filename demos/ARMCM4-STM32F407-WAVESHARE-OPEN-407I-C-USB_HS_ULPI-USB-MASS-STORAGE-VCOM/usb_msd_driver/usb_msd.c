@@ -239,6 +239,7 @@ usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassSt
   msdp->msd_interface_number = msd_interface_number;
   msdp->chp = NULL;
   msdp->enable_media_removial = true;
+  msdp->block_dev_info_valid_flag = false;
 
   chEvtInit(&msdp->evt_connected);
   chEvtInit(&msdp->evt_ejected);
@@ -261,19 +262,15 @@ usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassSt
   msdSetDefaultSenseKey(msdp);
 
   const uint32_t sleep_ms = 50;
-  for(uint32_t t = 0; t <= 2000; t += sleep_ms ) {
-    blkstate_t state = blkGetDriverState(bbdp);
-    if (state == BLK_READY) {
-      break;
-    }
-
+  for(uint32_t t = 0; t <= 250 && (blkGetDriverState(bbdp) != BLK_READY); t += sleep_ms ) {
     chThdSleepMilliseconds(sleep_ms);
   }
 
   if( blkGetDriverState(bbdp) == BLK_READY ) {
     blkGetInfo(bbdp, &msdp->block_dev_info);
+    msdp->block_dev_info_valid_flag = true;
   } else {
-    msdp->driver_state = USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY;
+    //msdp->driver_state = USB_MSD_DRIVER_ERROR_BLK_DEV_NOT_READY;
   }
 
   usbp->in_params[ms_ep_number - 1] = (void *)msdp;
@@ -1317,6 +1314,14 @@ static msg_t MassStorageThd(void *arg) {
     msdp->debug_enable_msd = enable_msd;
 
     if ( enable_msd ) {
+
+      if( ! msdp->block_dev_info_valid_flag ) {
+        if( blkGetDriverState(msdp->bbdp) == BLK_READY ) {
+            blkGetInfo(msdp->bbdp, &msdp->block_dev_info);
+            msdp->block_dev_info_valid_flag = true;
+        }
+      }
+
       msd_debug_print(msdp->chp, "state=%d\r\n", msdp->state);
       /* wait on data depending on the current state */
       switch (msdp->state) {

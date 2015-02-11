@@ -148,7 +148,7 @@ static void otg_core_reset(USBDriver *usbp) {
     ;
 }
 
-static void otg_disable_ep(USBDriver *usbp) {
+static void otg_disable_ep(USBDriver *usbp, const bool timeout_diepint) {
   stm32_otg_t *otgp = usbp->otg;
   unsigned i;
 
@@ -157,10 +157,18 @@ static void otg_disable_ep(USBDriver *usbp) {
        "The application must set this bit only if Endpoint Enable is
         already set for this endpoint".*/
     if ((otgp->ie[i].DIEPCTL & DIEPCTL_EPENA) != 0) {
-      otgp->ie[i].DIEPCTL = DIEPCTL_EPDIS;
+      otgp->ie[i].DIEPCTL |= DIEPCTL_EPDIS;
       /* Wait for endpoint disable.*/
-      while (!(otgp->ie[i].DIEPINT & DIEPINT_EPDISD))
-        ;
+      for (uint32_t k = 0; !(otgp->ie[i].DIEPINT & DIEPINT_EPDISD); k++) {
+        __NOP();
+        if( timeout_diepint && k > 10000 ) {
+          //FIXME figure out root cause. This happens with the USB HS OTG ULTP Phy, not sure about other configs
+          //In some circumstances, the DIEPINT bit never gets set. This is OK
+          //so long as an OTG core reset is done prior to trying to re-configure the endpoints,
+          //which is done in the otg_lld_start() funciton.
+          break;
+        }
+      }
     }
     else
       otgp->ie[i].DIEPCTL = 0;
@@ -175,7 +183,7 @@ static void otg_disable_ep(USBDriver *usbp) {
       otgp->oe[i].DOEPCTL = DOEPCTL_EPDIS;
       /* Wait for endpoint disable.*/
       while (!(otgp->oe[i].DOEPINT & DOEPINT_OTEPDIS))
-        ;
+       ;
     }
     else
       otgp->oe[i].DOEPCTL = 0;
@@ -1053,7 +1061,7 @@ void usb_lld_start(USBDriver *usbp) {
     otgp->GAHBCFG = 0;
 
     /* Endpoints re-initialization.*/
-    otg_disable_ep(usbp);
+    otg_disable_ep(usbp, false);
 
     /* Clear all pending Device Interrupts, only the USB Reset interrupt
        is required initially.*/
@@ -1093,7 +1101,7 @@ void usb_lld_stop(USBDriver *usbp) {
 
     /* Disabling all endpoints in case the driver has been stopped while
        active.*/
-    otg_disable_ep(usbp);
+    otg_disable_ep(usbp, true);
 
     usbp->txpending = 0;
 
@@ -1265,7 +1273,7 @@ void usb_lld_disable_endpoints(USBDriver *usbp) {
   otg_ram_reset(usbp);
 
   /* Disabling all endpoints.*/
-  otg_disable_ep(usbp);
+  otg_disable_ep(usbp, false);
 }
 
 /**
