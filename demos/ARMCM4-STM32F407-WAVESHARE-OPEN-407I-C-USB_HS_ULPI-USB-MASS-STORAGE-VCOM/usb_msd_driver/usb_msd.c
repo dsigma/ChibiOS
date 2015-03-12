@@ -262,7 +262,8 @@ usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassSt
   msdSetDefaultSenseKey(msdp);
 
   const uint32_t sleep_ms = 50;
-  for(uint32_t t = 0; t <= 250 && (blkGetDriverState(bbdp) != BLK_READY); t += sleep_ms ) {
+  uint32_t t;
+  for(t = 0; t <= 250 && (blkGetDriverState(bbdp) != BLK_READY); t += sleep_ms ) {
     chThdSleepMilliseconds(sleep_ms);
   }
 
@@ -308,7 +309,8 @@ usb_msd_driver_state_t msdStop(USBMassStorageDriver *msdp) {
 
   if (msdThd != NULL) {
     chThdTerminate(msdThd);
-    for(int i = 0; i < 20 && msdThd->p_state != THD_STATE_FINAL; i++ ) {
+    int i;
+    for(i = 0; i < 20 && msdThd->p_state != THD_STATE_FINAL; i++ ) {
       chThdSleepMilliseconds(20);
     }
 
@@ -321,7 +323,8 @@ usb_msd_driver_state_t msdStop(USBMassStorageDriver *msdp) {
 
   if (msdUSBTransferThd == NULL) {
     chThdTerminate(msdUSBTransferThd);
-    for(int i = 0; i < 20 && msdUSBTransferThd->p_state != THD_STATE_FINAL; i++ ) {
+    int i;
+    for(i = 0; i < 20 && msdUSBTransferThd->p_state != THD_STATE_FINAL; i++ ) {
       chThdSleepMilliseconds(20);
     }
 

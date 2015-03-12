@@ -151,6 +151,7 @@ static void otg_core_reset(USBDriver *usbp) {
 static void otg_disable_ep(USBDriver *usbp, const bool timeout_diepint) {
   stm32_otg_t *otgp = usbp->otg;
   unsigned i;
+  uint32_t k;
 
   for (i = 0; i <= usbp->otgparams->num_endpoints; i++) {
     /* Disable only if enabled because this sentence in the manual:
@@ -159,7 +160,7 @@ static void otg_disable_ep(USBDriver *usbp, const bool timeout_diepint) {
     if ((otgp->ie[i].DIEPCTL & DIEPCTL_EPENA) != 0) {
       otgp->ie[i].DIEPCTL |= DIEPCTL_EPDIS;
       /* Wait for endpoint disable.*/
-      for (uint32_t k = 0; !(otgp->ie[i].DIEPINT & DIEPINT_EPDISD); k++) {
+      for (k = 0; !(otgp->ie[i].DIEPINT & DIEPINT_EPDISD); k++) {
         __NOP();
         if( timeout_diepint && k > 10000 ) {
           //FIXME figure out root cause. This happens with the USB HS OTG ULTP Phy, not sure about other configs
