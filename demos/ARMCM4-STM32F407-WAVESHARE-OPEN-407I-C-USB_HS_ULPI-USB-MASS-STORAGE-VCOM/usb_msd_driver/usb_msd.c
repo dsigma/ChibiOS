@@ -498,6 +498,19 @@ static void msdSetDefaultSenseKey(USBMassStorageDriver *msdp) {
              SCSI_ASENSEQ_NO_QUALIFIER);
 }
 
+
+#ifndef USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_0
+#  define USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_0  "Chibios"
+#endif
+
+#ifndef USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_1
+#  define USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_1  "Mass Storage"
+#endif
+
+#ifndef USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_2
+#  define USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_2  {'v', CH_KERNEL_MAJOR + '0', '.', CH_KERNEL_MINOR + '0'}
+#endif
+
 static const scsi_inquiry_response_t default_scsi_inquiry_response =
       {0x00, /* peripheral, direct access block device */
        0x80, /* removable */
@@ -507,9 +520,11 @@ static const scsi_inquiry_response_t default_scsi_inquiry_response =
        0x00, /* sccstp*/
        0x00, /* bqueetc*/
        0x00, /* cmdqueue*/
-       "Chibios",
-       "Mass Storage",
-       {'v', CH_KERNEL_MAJOR + '0', '.', CH_KERNEL_MINOR + '0'}, };
+       USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_0,
+       USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_1,
+       USB_MASS_STORAGE_INQUIRY_RESPONSE_STRING_2,
+      };
+
 
 static msd_wait_mode_t SCSICommandInquiry(USBMassStorageDriver *msdp) {
   msd_cbw_t *cbw = &(msdp->cbw);
