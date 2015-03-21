@@ -3,9 +3,10 @@
 # NOTE: Can be overridden externally.
 #
 
+
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16 
 endif
 
 # C specific options here (added to USE_OPT).
@@ -44,7 +45,7 @@ endif
 # Enables the use of FPU on Cortex-M4.
 # Enable this if you really want to use the STM FWLib.
 ifeq ($(USE_FPU),)
-  USE_FPU = no
+  USE_FPU = yes
 endif
 
 # Enable this if you really want to use the STM FWLib.
