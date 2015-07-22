@@ -1699,6 +1699,12 @@
  */
 
 #if STM32_RCC_DCKCFGR_TIMPRE_FLAG
+#ifndef STM32F427_437xx
+#error "The STM32_RCC_DCKCFGR_TIMPRE_FLAG is only supported on the STM32F427 and STM32F437"
+#endif
+#endif
+
+#if STM32_RCC_DCKCFGR_TIMPRE_FLAG
 # if (STM32_PPRE1 == STM32_PPRE1_DIV1) || (STM32_PPRE1 == STM32_PPRE1_DIV2) || (STM32_PPRE1 == STM32_PPRE1_DIV4) || defined(__DOXYGEN__)
 #  define STM32_TIMCLK1               (STM32_HCLK)
 # else
