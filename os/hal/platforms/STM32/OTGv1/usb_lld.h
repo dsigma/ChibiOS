@@ -501,6 +501,10 @@ struct USBDriver {
    */
   uint32_t                      txpending;
   /**
+   * Flag indicating that the low level USB perepherial was started successfully.
+   */
+  uint32_t                      usb_start_success;
+  /**
    * @brief   Pointer to the thread.
    */
   Thread                        *thd_ptr;

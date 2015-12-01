@@ -131,21 +131,36 @@ static void usb_lld_wakeup_pump(USBDriver *usbp) {
   }
 }
 
-static void otg_core_reset(USBDriver *usbp) {
+static bool otg_core_reset(USBDriver *usbp) {
+  bool ret = true;
+  uint32_t try_counter;
+  const uint32_t try_limit = 100000;
   stm32_otg_t *otgp = usbp->otg;
 
   halPolledDelay(32);
 
   /* Core reset and delay of at least 3 PHY cycles.*/
   otgp->GRSTCTL = GRSTCTL_CSRST;
-  while ((otgp->GRSTCTL & GRSTCTL_CSRST) != 0)
-    ;
+  for (try_counter = 0; (otgp->GRSTCTL & GRSTCTL_CSRST) != 0 && try_counter < try_limit; try_counter++) {
+    /*If using a ULPI PHY that is incorrectly connected this can spin forever, enforce spin limit.*/
+  }
+
+  if( (otgp->GRSTCTL & GRSTCTL_CSRST) != 0 ) {
+    ret = false;
+  }
 
   halPolledDelay(12);
 
   /* Wait AHB idle condition.*/
-  while ((otgp->GRSTCTL & GRSTCTL_AHBIDL) == 0)
-    ;
+  for (try_counter = 0; (otgp->GRSTCTL & GRSTCTL_AHBIDL) == 0 && try_counter < try_limit; try_counter++) {
+    /*If using a ULPI PHY that is incorrectly connected this can spin forever, enforce spin limit.*/
+  }
+
+  if( (otgp->GRSTCTL & GRSTCTL_AHBIDL) == 0 ) {
+    ret = false;
+  }
+
+  return(ret);
 }
 
 static void otg_disable_ep(USBDriver *usbp, const bool timeout_diepint) {
@@ -1052,38 +1067,43 @@ void usb_lld_start(USBDriver *usbp) {
 #if STM32_USB_OTG_SERIAL_TESTING_MODE
     otgp->GUSBCFG |= GUSBCFG_ULPIICSM | GUSBCFG_ULPIFSLS;
     otgp->GRSTCTL = GRSTCTL_CSRST;
+    const bool otg_reset_status = true;
 #else
     /* Soft core reset.*/
-    otg_core_reset(usbp);
+    const bool otg_reset_status = otg_core_reset(usbp);
 #endif
 
 
-    /* Interrupts on TXFIFOs half empty.*/
-    otgp->GAHBCFG = 0;
+    if( otg_reset_status ) {
+      /* Interrupts on TXFIFOs half empty.*/
+      otgp->GAHBCFG = 0;
 
-    /* Endpoints re-initialization.*/
-    otg_disable_ep(usbp, false);
+      /* Endpoints re-initialization.*/
+      otg_disable_ep(usbp, false);
 
-    /* Clear all pending Device Interrupts, only the USB Reset interrupt
-       is required initially.*/
-    otgp->DIEPMSK  = 0;
-    otgp->DOEPMSK  = 0;
-    otgp->DAINTMSK = 0;
-    if (usbp->config->sof_cb == NULL) {
-      otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM;
+      /* Clear all pending Device Interrupts, only the USB Reset interrupt
+         is required initially.*/
+      otgp->DIEPMSK  = 0;
+      otgp->DOEPMSK  = 0;
+      otgp->DAINTMSK = 0;
+      if (usbp->config->sof_cb == NULL) {
+        otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
+                         GINTMSK_ESUSPM  | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_OTGM;
+      }
+      else {
+        otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
+                         GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM | GINTMSK_OTGM;
+      }
+
+      otgp->GINTSTS  = 0xFFFFFFFF; /* Clears all pending IRQs, if any. */
+
+      /* Global interrupts enable.*/
+      otgp->GAHBCFG |= GAHBCFG_GINTMSK;
+
+      usbp->usb_start_success = 1;
+    } else {
+      usbp->usb_start_success = 0;
     }
-    else {
-      otgp->GINTMSK  = GINTMSK_ENUMDNEM | GINTMSK_USBRSTM | GINTMSK_USBSUSPM |
-                       GINTMSK_ESUSPM | GINTMSK_SRQM | GINTMSK_WKUM | GINTMSK_SOFM | GINTMSK_OTGM;
-    }
-
-    otgp->GINTSTS  = 0xFFFFFFFF; /* Clears all pending IRQs, if any. */
-
-
-
-    /* Global interrupts enable.*/
-    otgp->GAHBCFG |= GAHBCFG_GINTMSK;
   }
 }
 

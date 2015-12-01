@@ -269,8 +269,14 @@ void usbStart(USBDriver *usbp, const USBConfig *config) {
   usbp->config = config;
   for (i = 0; i <= USB_MAX_ENDPOINTS; i++)
     usbp->epc[i] = NULL;
+
+  usbp->usb_start_success = 1;
   usb_lld_start(usbp);
-  usbp->state = USB_READY;
+  if( usbp->usb_start_success ) {
+    usbp->state = USB_READY;
+  } else {
+    usb_lld_stop(usbp);
+  }
   chSysUnlock();
 }
 
