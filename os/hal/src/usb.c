@@ -182,10 +182,25 @@ static bool_t default_handler(USBDriver *usbp) {
       return FALSE;
     /* Clearing the EP status, not valid for EP0, it is ignored in that case.*/
     if ((usbp->setup[4] & 0x0F) > 0) {
-      if (usbp->setup[4] & 0x80)
-        usb_lld_clear_in(usbp, usbp->setup[4] & 0x0F);
-      else
-        usb_lld_clear_out(usbp, usbp->setup[4] & 0x0F);
+      if (usbp->setup[4] & 0x80) {
+        switch (usb_lld_get_status_in(usbp, usbp->setup[4] & 0x0F)) {
+        case EP_STATUS_STALLED:
+          usb_lld_clear_in(usbp, usbp->setup[4] & 0x0F);
+          break;
+        case EP_STATUS_ACTIVE:
+        default:
+          break;
+        }
+      } else {
+        switch (usb_lld_get_status_out(usbp, usbp->setup[4] & 0x0F)) {
+        case EP_STATUS_STALLED:
+          usb_lld_clear_out(usbp, usbp->setup[4] & 0x0F);
+          break;
+        case EP_STATUS_ACTIVE:
+        default:
+          break;
+        }
+      }
     }
     usbSetupTransfer(usbp, NULL, 0, NULL);
     return TRUE;
