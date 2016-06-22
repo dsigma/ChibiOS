@@ -239,6 +239,7 @@ usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassSt
   msdp->msd_interface_number = msd_interface_number;
   msdp->chp = NULL;
   msdp->enable_media_removial = true;
+  msdp->read_only_mode = false;
   msdp->block_dev_info_valid_flag = false;
 
   chEvtInit(&msdp->evt_connected);
@@ -255,8 +256,8 @@ usb_msd_driver_state_t msdInit(USBDriver *usbp, BaseBlockDevice *bbdp, USBMassSt
   memset(&msdp->sense, 0, sizeof(msdp->sense));
 
   /* Response code = 0x70, additional sense length = 0x0A */
-  msdp->sense.byte[0] = 0x70;//FIXME use #define, what is this???
-  msdp->sense.byte[7] = 0x0A;//FIXME use #define, what is this???
+  msdp->sense.byte[0] = 0x70;//FIXME use #define, what is this magic number???
+  msdp->sense.byte[7] = 0x0A;//FIXME use #define, what is this magic number???
 
   /* make sure block device is working and get info */
   msdSetDefaultSenseKey(msdp);
@@ -400,8 +401,13 @@ bool_t msdRequestsHook2(USBDriver *usbp, USBMassStorageDriver *msdp) {
           return FALSE;
 
         //static uint8_t len_buf[1] = {0};
-        msdp->data.max_lun_len_buf[0] = 0;
-        usbSetupTransfer(usbp, msdp->data.max_lun_len_buf, 1, NULL);
+        if( msdp != NULL ) {
+          msdp->data.max_lun_len_buf[0] = 0;
+          usbSetupTransfer(usbp, msdp->data.max_lun_len_buf, 1, NULL);
+        } else {
+          //FIXME handle this more elegantly
+          return(FALSE);
+        }
         return TRUE;
       default:
         return FALSE;
@@ -655,6 +661,16 @@ static void SCSIWriteTransferPingPong(USBMassStorageDriver *msdp,
   msd_debug_nest_print(msdp->chp, "b");
 }
 
+static bool msdIsWriteProtected(USBMassStorageDriver *msdp) {
+  if( msdp->read_only_mode ) {
+    return(true);
+  }
+
+  if( blkIsWriteProtected(msdp->bbdp) ) {
+    return(true);
+  }
+  return(false);
+}
 
 static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
   msd_cbw_t *cbw = &(msdp->cbw);
@@ -663,7 +679,7 @@ static msd_wait_mode_t SCSICommandStartReadWrite10(USBMassStorageDriver *msdp) {
 
   msdSetDefaultSenseKey(msdp);
 
-  if ((cbw->scsi_cmd_data[0] == SCSI_CMD_WRITE_10) && blkIsWriteProtected(msdp->bbdp)) {
+  if ((cbw->scsi_cmd_data[0] == SCSI_CMD_WRITE_10) && msdIsWriteProtected(msdp)) {
     msd_debug_err_print(msdp->chp, "\r\nWrite Protected!\r\n");
     /* device is write protected and a write has been issued */
     /* Block address is invalid, update SENSE key and return command fail */
@@ -978,7 +994,7 @@ static msd_wait_mode_t SCSICommandModeSense6(USBMassStorageDriver *msdp) {
   //FIXME check for unsupported mode page set sense code, see page 161(144) of USB Mass storage book
   memset(&msdp->data.mode_sense6_response, 0, sizeof(msdp->data.mode_sense6_response));
   msdp->data.mode_sense6_response.mode_data_length = 3;
-  if( blkIsWriteProtected(msdp->bbdp) ) {
+  if( msdIsWriteProtected(msdp) ) {
     msdp->data.mode_sense6_response.device_specifc_paramters |= (1<<7);
   }
 

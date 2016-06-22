@@ -228,6 +228,7 @@ struct USBMassStorageDriver {
 
     /* Externally modifiable settings */
     bool_t enable_media_removial;
+    bool_t read_only_mode;
     bool_t disable_usb_bus_disconnect_on_eject;
     BaseSequentialStream *chp; /*For debug logging*/
 
