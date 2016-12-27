@@ -321,8 +321,11 @@ uint32_t rtc_lld_get_time_fat(RTCDriver *rtcp) {
 
   v =  (tv_date & RTC_DR_YU) >> RTC_DR_YU_OFFSET;
   v += ((tv_date & RTC_DR_YT) >> RTC_DR_YT_OFFSET) * 10;
-  v += 2000 - 1900 - 80;
-  fattime |= v << 25;
+  v += 1900;
+  if( v < 1980 ) {
+    v = 1980;
+  }
+  fattime |= (v - 1980) << 25;
 
   return fattime;
 }
