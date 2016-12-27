@@ -255,9 +255,11 @@ DRESULT disk_ioctl (
   return RES_PARERR;
 }
 
+extern DWORD get_fattime2();
 DWORD get_fattime(void) {
 #if HAL_USE_RTC
-    return rtcGetTimeFat(&RTCD1);
+    return(get_fattime2());
+    //return rtcGetTimeFat(&RTCD1);
 #else
     return ((uint32_t)0 | (1 << 16)) | (1 << 21); /* wrong but valid time */
 #endif
