@@ -96,7 +96,8 @@
  * can have significant negative side affects on thoughput.
  */
 //#define SERIAL_USB_BUFFERS_SIZE     256
-#define SERIAL_USB_BUFFERS_SIZE     512
+//#define SERIAL_USB_BUFFERS_SIZE       512
+#define SERIAL_USB_BUFFERS_SIZE       1024
 #endif
 /** @} */
 
@@ -159,6 +160,8 @@ typedef struct {
    * @brief   Interrupt IN endpoint used for notifications.
    */
   usbep_t                   int_in;
+
+
 } SerialUSBConfig;
 
 /**
@@ -178,7 +181,15 @@ typedef struct {
   uint8_t                   ob[SERIAL_USB_BUFFERS_SIZE];                    \
   /* End of the mandatory fields.*/                                         \
   /* Current configuration data.*/                                          \
-  const SerialUSBConfig     *config;
+  const SerialUSBConfig     *config;                                        \
+/*FIXME Remove these debug tracking variables*/ \
+  volatile uint32_t inotify_count;\
+  volatile uint32_t onotify_count;\
+  volatile uint32_t sdu_start_count;\
+  volatile uint32_t sdu_stop_count;\
+  volatile uint32_t sdu_configure_hooki_count;\
+  volatile uint32_t sdu_data_transmited_count;\
+  volatile uint32_t sdu_data_received_count;
 
 /**
  * @brief   @p SerialUSBDriver specific methods.
