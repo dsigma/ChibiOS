@@ -97,7 +97,11 @@
  */
 //#define SERIAL_USB_BUFFERS_SIZE     256
 //#define SERIAL_USB_BUFFERS_SIZE       512
+#if 0
 #define SERIAL_USB_BUFFERS_SIZE       1024
+#else
+#define SERIAL_USB_BUFFERS_SIZE       1536
+#endif
 #endif
 /** @} */
 
