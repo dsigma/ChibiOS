@@ -66,7 +66,7 @@
   */
 
 #if !defined(STM32F40_41xxx) && !defined(STM32F427_437xx) && !defined(STM32F429_439xx) && !defined(STM32F401xx) && !defined(STM32F411xE) && \
-    !defined(STM32F446xx)
+    !defined(STM32F446xx) && !defined(STM32F413_423x)
   /* #define STM32F40_41xxx */   /*!< STM32F405RG, STM32F405VG, STM32F405ZG, STM32F415RG, STM32F415VG, STM32F415ZG,  
                                       STM32F407VG, STM32F407VE, STM32F407ZG, STM32F407ZE, STM32F407IG, STM32F407IE, 
                                       STM32F417VG, STM32F417VE, STM32F417ZG, STM32F417ZE, STM32F417IG and STM32F417IE Devices */
@@ -103,7 +103,7 @@
   */
 
 #if !defined(STM32F40_41xxx) && !defined(STM32F427_437xx) && !defined(STM32F429_439xx) && !defined(STM32F401xx) && !defined(STM32F411xE) && \
-    !defined(STM32F446xx)  
+    !defined(STM32F446xx) && !defined(STM32F413_423x)
  #error "Please select first the target STM32F4xx device used in your application (in stm32f4xx.h file)"
 #endif
 
@@ -123,7 +123,8 @@
    Tip: To avoid modifying this file each time you need to use different HSE, you
         can define the HSE value in your toolchain compiler preprocessor.
   */           
-#if defined(STM32F40_41xxx) || defined(STM32F427_437xx)  || defined(STM32F429_439xx) || defined(STM32F401xx)  || defined(STM32F411xE)
+#if defined(STM32F40_41xxx) || defined(STM32F427_437xx)  || defined(STM32F429_439xx) || defined(STM32F401xx)  || \
+   defined(STM32F411xE) || defined(STM32F413_423x)
  #if !defined  (HSE_VALUE) 
   #define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
@@ -422,7 +423,83 @@ typedef enum IRQn
   LTDC_ER_IRQn                = 89,     /*!< LTDC Error global Interrupt                                       */
   DMA2D_IRQn                  = 90      /*!< DMA2D global Interrupt                                            */
 #endif /* STM32F429_439xx */
-   
+
+
+#if defined(STM32F413_423x)
+  CAN1_TX_IRQn                = 19,     /*!< CAN1 TX Interrupt                                                 */
+  CAN1_RX0_IRQn               = 20,     /*!< CAN1 RX0 Interrupt                                                */
+  CAN1_RX1_IRQn               = 21,     /*!< CAN1 RX1 Interrupt                                                */
+  CAN1_SCE_IRQn               = 22,     /*!< CAN1 SCE Interrupt                                                */
+  EXTI9_5_IRQn                = 23,     /*!< External Line[9:5] Interrupts                                     */
+  TIM1_BRK_TIM9_IRQn          = 24,     /*!< TIM1 Break interrupt and TIM9 global interrupt                    */
+  TIM1_UP_TIM10_IRQn          = 25,     /*!< TIM1 Update Interrupt and TIM10 global interrupt                  */
+  TIM1_TRG_COM_TIM11_IRQn     = 26,     /*!< TIM1 Trigger and Commutation Interrupt and TIM11 global interrupt */
+  TIM1_CC_IRQn                = 27,     /*!< TIM1 Capture Compare Interrupt                                    */
+  TIM2_IRQn                   = 28,     /*!< TIM2 global Interrupt                                             */
+  TIM3_IRQn                   = 29,     /*!< TIM3 global Interrupt                                             */
+  TIM4_IRQn                   = 30,     /*!< TIM4 global Interrupt                                             */
+  I2C1_EV_IRQn                = 31,     /*!< I2C1 Event Interrupt                                              */
+  I2C1_ER_IRQn                = 32,     /*!< I2C1 Error Interrupt                                              */
+  I2C2_EV_IRQn                = 33,     /*!< I2C2 Event Interrupt                                              */
+  I2C2_ER_IRQn                = 34,     /*!< I2C2 Error Interrupt                                              */
+  SPI1_IRQn                   = 35,     /*!< SPI1 global Interrupt                                             */
+  SPI2_IRQn                   = 36,     /*!< SPI2 global Interrupt                                             */
+  USART1_IRQn                 = 37,     /*!< USART1 global Interrupt                                           */
+  USART2_IRQn                 = 38,     /*!< USART2 global Interrupt                                           */
+  USART3_IRQn                 = 39,     /*!< USART3 global Interrupt                                           */
+  EXTI15_10_IRQn              = 40,     /*!< External Line[15:10] Interrupts                                   */
+  RTC_Alarm_IRQn              = 41,     /*!< RTC Alarm (A and B) through EXTI Line Interrupt                   */
+  OTG_FS_WKUP_IRQn            = 42,     /*!< USB OTG FS Wakeup through EXTI line interrupt                     */
+  TIM8_BRK_TIM12_IRQn         = 43,     /*!< TIM8 Break Interrupt and TIM12 global interrupt                   */
+  TIM8_UP_TIM13_IRQn          = 44,     /*!< TIM8 Update Interrupt and TIM13 global interrupt                  */
+  TIM8_TRG_COM_TIM14_IRQn     = 45,     /*!< TIM8 Trigger and Commutation Interrupt and TIM14 global interrupt */
+  TIM8_CC_IRQn                = 46,     /*!< TIM8 Capture Compare Interrupt                                    */
+  DMA1_Stream7_IRQn           = 47,     /*!< DMA1 Stream7 Interrupt                                            */
+  FMC_IRQn                    = 48,     /*!< FMC global Interrupt                                              */
+  SDIO_IRQn                   = 49,     /*!< SDIO global Interrupt                                             */
+  TIM5_IRQn                   = 50,     /*!< TIM5 global Interrupt                                             */
+  SPI3_IRQn                   = 51,     /*!< SPI3 global Interrupt                                             */
+  UART4_IRQn                  = 52,     /*!< UART4 global Interrupt                                            */
+  UART5_IRQn                  = 53,     /*!< UART5 global Interrupt                                            */
+  TIM6_DAC_IRQn               = 54,     /*!< TIM6 global and DAC1&2 underrun error  interrupts                 */
+  TIM7_IRQn                   = 55,     /*!< TIM7 global interrupt                                             */
+  DMA2_Stream0_IRQn           = 56,     /*!< DMA2 Stream 0 global Interrupt                                    */
+  DMA2_Stream1_IRQn           = 57,     /*!< DMA2 Stream 1 global Interrupt                                    */
+  DMA2_Stream2_IRQn           = 58,     /*!< DMA2 Stream 2 global Interrupt                                    */
+  DMA2_Stream3_IRQn           = 59,     /*!< DMA2 Stream 3 global Interrupt                                    */
+  DMA2_Stream4_IRQn           = 60,     /*!< DMA2 Stream 4 global Interrupt                                    */
+  ETH_IRQn                    = 61,     /*!< Ethernet global Interrupt                                         */
+  ETH_WKUP_IRQn               = 62,     /*!< Ethernet Wakeup through EXTI line Interrupt                       */
+  CAN2_TX_IRQn                = 63,     /*!< CAN2 TX Interrupt                                                 */
+  CAN2_RX0_IRQn               = 64,     /*!< CAN2 RX0 Interrupt                                                */
+  CAN2_RX1_IRQn               = 65,     /*!< CAN2 RX1 Interrupt                                                */
+  CAN2_SCE_IRQn               = 66,     /*!< CAN2 SCE Interrupt                                                */
+  OTG_FS_IRQn                 = 67,     /*!< USB OTG FS global Interrupt                                       */
+  DMA2_Stream5_IRQn           = 68,     /*!< DMA2 Stream 5 global interrupt                                    */
+  DMA2_Stream6_IRQn           = 69,     /*!< DMA2 Stream 6 global interrupt                                    */
+  DMA2_Stream7_IRQn           = 70,     /*!< DMA2 Stream 7 global interrupt                                    */
+  USART6_IRQn                 = 71,     /*!< USART6 global interrupt                                           */
+  I2C3_EV_IRQn                = 72,     /*!< I2C3 event interrupt                                              */
+  I2C3_ER_IRQn                = 73,     /*!< I2C3 error interrupt                                              */
+  OTG_HS_EP1_OUT_IRQn         = 74,     /*!< USB OTG HS End Point 1 Out global interrupt                       */
+  OTG_HS_EP1_IN_IRQn          = 75,     /*!< USB OTG HS End Point 1 In global interrupt                        */
+  OTG_HS_WKUP_IRQn            = 76,     /*!< USB OTG HS Wakeup through EXTI interrupt                          */
+  OTG_HS_IRQn                 = 77,     /*!< USB OTG HS global interrupt                                       */
+  DCMI_IRQn                   = 78,     /*!< DCMI global interrupt                                             */
+  CRYP_IRQn                   = 79,     /*!< CRYP crypto global interrupt                                      */
+  HASH_RNG_IRQn               = 80,     /*!< Hash and Rng global interrupt                                     */
+  FPU_IRQn                    = 81,     /*!< FPU global interrupt                                              */
+  UART7_IRQn                  = 82,     /*!< UART7 global interrupt                                            */
+  UART8_IRQn                  = 83,     /*!< UART8 global interrupt                                            */
+  SPI4_IRQn                   = 84,     /*!< SPI4 global Interrupt                                             */
+  SPI5_IRQn                   = 85,     /*!< SPI5 global Interrupt                                             */
+  SPI6_IRQn                   = 86,     /*!< SPI6 global Interrupt                                             */
+  SAI1_IRQn                   = 87,     /*!< SAI1 global Interrupt                                             */
+  LTDC_IRQn                   = 88,     /*!< LTDC global Interrupt                                             */
+  LTDC_ER_IRQn                = 89,     /*!< LTDC Error global Interrupt                                       */
+  DMA2D_IRQn                  = 90      /*!< DMA2D global Interrupt                                            */
+#endif /* STM32F413_423x */
+
 #if defined(STM32F401xx) || defined(STM32F411xE)
   EXTI9_5_IRQn                = 23,     /*!< External Line[9:5] Interrupts                                     */
   TIM1_BRK_TIM9_IRQn          = 24,     /*!< TIM1 Break interrupt and TIM9 global interrupt                    */
@@ -999,7 +1076,7 @@ typedef struct
 } FSMC_Bank4_TypeDef; 
 #endif /* STM32F40_41xxx */
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F413_423x)
 /** 
   * @brief Flexible Memory Controller
   */
@@ -1071,7 +1148,7 @@ typedef struct
   __IO uint32_t SDRTR;       /*!< SDRAM Refresh Timer register,   Address offset: 0x154  */
   __IO uint32_t SDSR;        /*!< SDRAM Status register,          Address offset: 0x158  */
 } FMC_Bank5_6_TypeDef; 
-#endif /* STM32F427_437xx ||  STM32F429_439xx || STM32F446xx */
+#endif /* STM32F427_437xx ||  STM32F429_439xx || STM32F446xx || STM32F413_423x*/
 
 /** 
   * @brief General Purpose I/O
@@ -1627,7 +1704,7 @@ typedef struct
 #define FSMC_R_BASE           ((uint32_t)0xA0000000) /*!< FSMC registers base address                                                */
 #endif /* STM32F40_41xxx */
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F413_423x)
 #define FMC_R_BASE            ((uint32_t)0xA0000000) /*!< FMC registers base address                                                 */
 #endif /* STM32F427_437xx ||  STM32F429_439xx || STM32F446xx */
 
@@ -1780,7 +1857,7 @@ typedef struct
 #define FSMC_Bank4_R_BASE     (FSMC_R_BASE + 0x00A0)
 #endif /* STM32F40_41xxx */
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F413_423x)
 /*!< FMC Bankx registers base address */
 #define FMC_Bank1_R_BASE      (FMC_R_BASE + 0x0000)
 #define FMC_Bank1E_R_BASE     (FMC_R_BASE + 0x0104)
@@ -1918,7 +1995,7 @@ typedef struct
 #define FSMC_Bank4          ((FSMC_Bank4_TypeDef *) FSMC_Bank4_R_BASE)
 #endif /* STM32F40_41xxx */
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F413_423x)
 #define FMC_Bank1           ((FMC_Bank1_TypeDef *) FMC_Bank1_R_BASE)
 #define FMC_Bank1E          ((FMC_Bank1E_TypeDef *) FMC_Bank1E_R_BASE)
 #define FMC_Bank2           ((FMC_Bank2_TypeDef *) FMC_Bank2_R_BASE)
@@ -5225,7 +5302,7 @@ typedef struct
 #define  FSMC_ECCR3_ECC3                     ((uint32_t)0xFFFFFFFF)        /*!<ECC result */
 #endif /* STM32F40_41xxx */
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F413_423x)
 /******************************************************************************/
 /*                                                                            */
 /*                          Flexible Memory Controller                        */
@@ -7420,7 +7497,7 @@ typedef struct
 #define  RCC_AHB3RSTR_FSMCRST                ((uint32_t)0x00000001)
 #endif /* STM32F40_41xxx */
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F413_423x)
 #define  RCC_AHB3RSTR_FMCRST                ((uint32_t)0x00000001)
 #endif /* STM32F427_437xx ||  STM32F429_439xx || STM32F446xx */
 #if defined(STM32F446xx)
@@ -7525,7 +7602,7 @@ typedef struct
 #define  RCC_AHB3ENR_FSMCEN                  ((uint32_t)0x00000001)
 #endif /* STM32F40_41xxx */
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F413_423x)
 #define  RCC_AHB3ENR_FMCEN                  ((uint32_t)0x00000001)
 #endif /* STM32F427_437xx ||  STM32F429_439xx || STM32F446xx */
 
@@ -7632,7 +7709,7 @@ typedef struct
 #define  RCC_AHB3LPENR_FSMCLPEN              ((uint32_t)0x00000001)
 #endif /* STM32F40_41xxx */
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F413_423x)
 #define  RCC_AHB3LPENR_FMCLPEN              ((uint32_t)0x00000001)
 #endif /* STM32F427_437xx ||  STM32F429_439xx  || STM32F446xx */
 #if defined(STM32F446xx)

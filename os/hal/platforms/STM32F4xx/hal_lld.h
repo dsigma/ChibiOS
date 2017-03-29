@@ -63,6 +63,10 @@
 #define PLATFORM_NAME           "STM32F427/F437 High Performance with DSP and FPU"
 #define STM32F4XX
 
+#elif defined(STM32F413_423x)
+#define PLATFORM_NAME           "STM32F413/F423 High Performance with DSP and FPU"
+#define STM32F4XX
+
 #elif defined(STM32F40_41xxx)
 #define PLATFORM_NAME           "STM32F407/F417 High Performance with DSP and FPU"
 #define STM32F4XX
@@ -87,7 +91,7 @@
  * @name    Absolute Maximum Ratings
  * @{
  */
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) ||                 \
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F413_423x) || \
     defined(__DOXYGEN__)
 /**
  * @brief   Absolute maximum system clock.
@@ -137,6 +141,7 @@
 /**
  * @brief   Minimum PLLs input clock frequency.
  */
+
 #define STM32_PLLIN_MIN         950000
 
 /**
@@ -147,17 +152,21 @@
 /**
  * @brief   Maximum PLLs VCO clock frequency.
  */
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx)
 #define STM32_PLLVCO_MIN        192000000
+#elif  defined(STM32F413_423x)
+#define STM32_PLLVCO_MIN        100000000
+#endif
 
 /**
  * @brief   Maximum PLL output clock frequency.
  */
-#define STM32_PLLOUT_MAX        180000000
+#define STM32_PLLOUT_MAX        180000000 //FIXME this may not be correct for the 413_423
 
 /**
  * @brief   Minimum PLL output clock frequency.
  */
-#define STM32_PLLOUT_MIN        24000000
+#define STM32_PLLOUT_MIN        24000000 //FIXME this may not be correct for the 413_423
 
 /**
  * @brief   Maximum APB1 clock frequency.
@@ -496,8 +505,8 @@
                                  STM32_DMA_STREAM_ID_MSK(1, 7))
 #define STM32_SPI3_TX_DMA_CHN   0x00000000
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) ||                 \
-    defined(STM32F401xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) ||  \
+    defined(STM32F401xx) || defined(STM32F413_423x)
 #define STM32_HAS_SPI4          TRUE
 #define STM32_SPI4_RX_DMA_MSK   (STM32_DMA_STREAM_ID_MSK(2, 0) |            \
                                  STM32_DMA_STREAM_ID_MSK(2, 3))
@@ -509,7 +518,8 @@
 #define STM32_HAS_SPI4          FALSE
 #endif
 
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx)
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || \
+defined(STM32F413_423x)
 #define STM32_HAS_SPI5          TRUE
 #define STM32_SPI5_RX_DMA_MSK   (STM32_DMA_STREAM_ID_MSK(2, 3) |            \
                                  STM32_DMA_STREAM_ID_MSK(2, 5))
@@ -517,15 +527,18 @@
 #define STM32_SPI5_TX_DMA_MSK   (STM32_DMA_STREAM_ID_MSK(2, 4) |            \
                                  STM32_DMA_STREAM_ID_MSK(2, 6))
 #define STM32_SPI5_TX_DMA_CHN   0x07020000
+#else /* !(defined(STM32F427_437xx) || defined(STM32F429_439xx)) ||
+defined(STM32F413_423x)*/
+#define STM32_HAS_SPI5          FALSE
+#endif
 
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx)
 #define STM32_HAS_SPI6          TRUE
 #define STM32_SPI6_RX_DMA_MSK   (STM32_DMA_STREAM_ID_MSK(2, 6))
 #define STM32_SPI6_RX_DMA_CHN   0x01000000
 #define STM32_SPI6_TX_DMA_MSK   (STM32_DMA_STREAM_ID_MSK(2, 5))
 #define STM32_SPI6_TX_DMA_CHN   0x00100000
-
 #else /* !(defined(STM32F427_437xx) || defined(STM32F429_439xx)) */
-#define STM32_HAS_SPI5          FALSE
 #define STM32_HAS_SPI6          FALSE
 #endif /* !(defined(STM32F427_437xx) || defined(STM32F429_439xx)) */
 
@@ -611,7 +624,8 @@
 #define STM32_USART6_TX_DMA_CHN 0x55000000
 
 
-#if (defined(STM32F427_437xx) || defined(STM32F429_439xx))
+#if (defined(STM32F427_437xx) || defined(STM32F429_439xx)) || \
+defined(STM32F413_423x)
 #define STM32_HAS_UART7         TRUE
 #define STM32_UART7_RX_DMA_MSK  (STM32_DMA_STREAM_ID_MSK(1, 3))
 #define STM32_UART7_RX_DMA_CHN  0x00004000
@@ -1147,6 +1161,51 @@
 #error "invalid VDD voltage specified"
 #endif
 
+#elif defined(STM32F413_423x)
+#if (STM32_VDD >= 270) && (STM32_VDD <= 360)
+#define STM32_0WS_THRESHOLD         25000000
+#define STM32_1WS_THRESHOLD         50000000
+#define STM32_2WS_THRESHOLD         75000000
+#define STM32_3WS_THRESHOLD         100000000
+#define STM32_4WS_THRESHOLD         0
+#define STM32_5WS_THRESHOLD         0
+#define STM32_6WS_THRESHOLD         0
+#define STM32_7WS_THRESHOLD         0
+#define STM32_8WS_THRESHOLD         0
+#elif (STM32_VDD >= 240) && (STM32_VDD < 270)
+#define STM32_0WS_THRESHOLD         20000000
+#define STM32_1WS_THRESHOLD         40000000
+#define STM32_2WS_THRESHOLD         60000000
+#define STM32_3WS_THRESHOLD         80000000
+#define STM32_4WS_THRESHOLD         100000000
+#define STM32_5WS_THRESHOLD         0
+#define STM32_6WS_THRESHOLD         0
+#define STM32_7WS_THRESHOLD         0
+#define STM32_8WS_THRESHOLD         0
+#elif (STM32_VDD >= 210) && (STM32_VDD < 240)
+#define STM32_0WS_THRESHOLD         18000000
+#define STM32_1WS_THRESHOLD         36000000
+#define STM32_2WS_THRESHOLD         54000000
+#define STM32_3WS_THRESHOLD         72000000
+#define STM32_4WS_THRESHOLD         90000000
+#define STM32_5WS_THRESHOLD         100000000
+#define STM32_6WS_THRESHOLD         0
+#define STM32_7WS_THRESHOLD         0
+#define STM32_8WS_THRESHOLD         0
+#elif (STM32_VDD >= 180) && (STM32_VDD < 210)
+#define STM32_0WS_THRESHOLD         16000000
+#define STM32_1WS_THRESHOLD         32000000
+#define STM32_2WS_THRESHOLD         48000000
+#define STM32_3WS_THRESHOLD         64000000
+#define STM32_4WS_THRESHOLD         80000000
+#define STM32_5WS_THRESHOLD         96000000
+#define STM32_6WS_THRESHOLD         100000000
+#define STM32_7WS_THRESHOLD         0
+#define STM32_8WS_THRESHOLD         0
+#else
+#error "invalid VDD voltage specified"
+#endif
+
 #else /* STM32F2XX */
 #if (STM32_VDD >= 270) && (STM32_VDD <= 360)
 #define STM32_0WS_THRESHOLD         30000000
@@ -1344,6 +1403,7 @@
 /**
  * @brief   STM32_PLLN field.
  */
+//FIXME This may be 50-432 for some or all chips.  64 is a bit boundary, so maybe this is better for mathing?
 #if ((STM32_PLLN_VALUE >= 64) && (STM32_PLLN_VALUE <= 432)) ||              \
     defined(__DOXYGEN__)
 #define STM32_PLLN                  (STM32_PLLN_VALUE << 6)
@@ -1422,7 +1482,7 @@
 
 /* Calculating VOS settings, it is different for each sub-platform.*/
 #if defined(STM32F429_439xx) || defined(STM32F427_437xx) ||                 \
-    defined(__DOXYGEN__)
+    defined(STM32F413_423x) || defined(__DOXYGEN__)
 #if STM32_SYSCLK <= 120000000
 #define STM32_VOS                   STM32_VOS_SCALE3
 #define STM32_OVERDRIVE_REQUIRED    FALSE
