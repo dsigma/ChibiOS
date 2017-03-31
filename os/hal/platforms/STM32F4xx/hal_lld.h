@@ -435,14 +435,18 @@
 #define STM32_HAS_GPIOD         TRUE
 #define STM32_HAS_GPIOE         TRUE
 #define STM32_HAS_GPIOH         TRUE
-#if !defined(STM32F401xx)
-#define STM32_HAS_GPIOF         TRUE
-#define STM32_HAS_GPIOG         TRUE
-#define STM32_HAS_GPIOI         TRUE
-#else /* defined(STM32F401xx) */
+#if defined(STM32F401xx) /* defined(STM32F401xx) */
 #define STM32_HAS_GPIOF         FALSE
 #define STM32_HAS_GPIOG         FALSE
 #define STM32_HAS_GPIOI         FALSE
+#elif defined(STM32F413_423x)
+#define STM32_HAS_GPIOF         TRUE
+#define STM32_HAS_GPIOG         TRUE
+#define STM32_HAS_GPIOI         FALSE
+#else
+#define STM32_HAS_GPIOF         TRUE
+#define STM32_HAS_GPIOG         TRUE
+#define STM32_HAS_GPIOI         TRUE
 #endif /* defined(STM32F401xx) */
 
 /* I2C attributes.*/
