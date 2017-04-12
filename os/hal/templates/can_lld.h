@@ -21,7 +21,6 @@
  * @addtogroup CAN
  * @{
  */
-
 #ifndef _CAN_LLD_H_
 #define _CAN_LLD_H_
 
@@ -80,6 +79,7 @@
  * @brief   Type of a transmission mailbox index.
  */
 typedef uint32_t canmbx_t;
+
 
 /**
  * @brief   CAN transmission frame.

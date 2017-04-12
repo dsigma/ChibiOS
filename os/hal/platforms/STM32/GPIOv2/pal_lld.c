@@ -157,6 +157,7 @@ void _pal_lld_init(const PALConfig *config) {
 #if STM32_HAS_GPIOI
   initgpio(GPIOI, &config->PIData);
 #endif
+
 }
 
 /**

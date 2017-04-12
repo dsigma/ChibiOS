@@ -107,7 +107,6 @@ typedef enum {
   CAN_READY = 3,                            /**< Ready.                     */
   CAN_SLEEP = 4                             /**< Sleep state.               */
 } canstate_t;
-
 #include "can_lld.h"
 
 /*===========================================================================*/

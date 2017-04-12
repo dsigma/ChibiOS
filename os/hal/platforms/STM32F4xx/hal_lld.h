@@ -30,6 +30,7 @@
  *          - STM32F401xx for High-performance STM32 F-4 devices.
  *          - STM32F40_41xxx for High-performance STM32 F-4 devices.
  *          - STM32F427_437xx for High-performance STM32 F-4 devices.
+ *          - STM32F413_423x for High-performance STM32 F-4 devices.
  *          - STM32F429_439xx for High-performance STM32 F-4 devices.
  *          .
  *
@@ -161,7 +162,11 @@
 /**
  * @brief   Maximum PLL output clock frequency.
  */
-#define STM32_PLLOUT_MAX        180000000 //FIXME this may not be correct for the 413_423
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx)
+#define STM32_PLLOUT_MAX        180000000
+#elif  defined(STM32F413_423x)
+#define STM32_PLLOUT_MAX        100000000
+#endif
 
 /**
  * @brief   Minimum PLL output clock frequency.
@@ -171,12 +176,20 @@
 /**
  * @brief   Maximum APB1 clock frequency.
  */
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx)
 #define STM32_PCLK1_MAX         (STM32_PLLOUT_MAX /4)
+#elif  defined(STM32F413_423x)
+#define STM32_PCLK1_MAX         (STM32_PLLOUT_MAX /2)
+#endif
 
 /**
  * @brief   Maximum APB2 clock frequency.
  */
+#if defined(STM32F427_437xx) || defined(STM32F429_439xx)
 #define STM32_PCLK2_MAX         (STM32_PLLOUT_MAX / 2)
+#elif  defined(STM32F413_423x)
+#define STM32_PCLK2_MAX         STM32_PLLOUT_MAX
+#endif
 
 /**
  * @brief   Maximum SPI/I2S clock frequency.

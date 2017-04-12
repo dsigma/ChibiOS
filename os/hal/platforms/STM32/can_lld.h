@@ -21,10 +21,8 @@
  * @addtogroup CAN
  * @{
  */
-
 #ifndef _CAN_LLD_H_
 #define _CAN_LLD_H_
-
 #if HAL_USE_CAN || defined(__DOXYGEN__)
 
 /*===========================================================================*/
