@@ -24,9 +24,13 @@
 #include "usb_msd.h"
 
 
+#ifndef MIN
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#endif
 
 #if STM32_USB_USE_OTG2 && STM32_USE_USB_OTG2_HS
 #define USB_MAX_PACKET_SIZE         512
+#define USB_CDC_DESCRIPTOR_MAX_PACKET_SIZE     MIN(512, SERIAL_USB_BUFFERS_SIZE)
 #define USB_CDC_INTERUPT_INTERVAL   0x10
 #else
 #define USB_MAX_PACKET_SIZE         64
@@ -161,12 +165,12 @@ static const uint8_t msd_configuration_descriptor_data[] = {
     /* Endpoint 3 Descriptor. */
     USB_DESC_ENDPOINT (USB_CDC_DATA_AVAILABLE_EP, /* bEndpointAddress.*/
             0x02, /* bmAttributes (Bulk).             */
-            USB_MAX_PACKET_SIZE, /* wMaxPacketSize.                  */
+            USB_CDC_DESCRIPTOR_MAX_PACKET_SIZE, /* wMaxPacketSize.                  */
             0x00), /* bInterval.                       */
     /* Endpoint 1 Descriptor. */
     USB_DESC_ENDPOINT (USB_CDC_DATA_REQUEST_EP|0x80, /* bEndpointAddress.*/
             0x02, /* bmAttributes (Bulk).             */
-            USB_MAX_PACKET_SIZE, /* wMaxPacketSize.                  */
+            USB_CDC_DESCRIPTOR_MAX_PACKET_SIZE, /* wMaxPacketSize.                  */
             0x00), /* bInterval.                       */
 
 
@@ -324,8 +328,8 @@ static const USBEndpointConfig epCDC1config = {
   NULL,
   sduDataTransmitted,
   sduDataReceived,
-  0x0040,
-  0x0040,
+  USB_CDC_DESCRIPTOR_MAX_PACKET_SIZE,
+  USB_CDC_DESCRIPTOR_MAX_PACKET_SIZE,
   &epCDC1instate,
   &epCDC1outstate,
   2,
@@ -369,7 +373,7 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
     case USB_EVENT_ADDRESS:
       return;
     case USB_EVENT_CONFIGURED:
-      chSysLockFromIsr()
+      chSysLockFromIsr();
       msdp->reconfigured_or_reset_event = TRUE;
       usbInitEndpointI(usbp, msdp->ms_ep_number, &epDataConfig);
 
@@ -386,7 +390,7 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
 
       /* signal that the device is connected */
       chEvtBroadcastI(&msdp->evt_connected);
-      chSysUnlockFromIsr()
+      chSysUnlockFromIsr();
       return;
     case USB_EVENT_SUSPEND:
       return;

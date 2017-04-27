@@ -21,9 +21,12 @@
 #include "ch.h"
 #include "hal.h"
 
+#ifndef MIN
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#endif
 
 #if STM32_USB_USE_OTG2 && STM32_USE_USB_OTG2_HS
-#define MAX_USB_PACKET_SIZE   512
+#define MAX_USB_PACKET_SIZE   MIN(512, SERIAL_USB_BUFFERS_SIZE)
 #else
 #define MAX_USB_PACKET_SIZE   64
 #endif
@@ -238,8 +241,8 @@ static const USBEndpointConfig ep1config = {
   NULL,
   sduDataTransmitted,
   sduDataReceived,
-  0x0040,
-  0x0040,
+  MAX_USB_PACKET_SIZE,
+  MAX_USB_PACKET_SIZE,
   &ep1instate,
   &ep1outstate,
   2,
