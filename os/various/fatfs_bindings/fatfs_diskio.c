@@ -33,7 +33,40 @@ extern RTCDriver RTCD1;
 #define MMC     0
 #define SDC     0
 
+uint32_t mmc_is_in_sleep_mode = 0;
 
+bool disk_wake(SDCDriver *sdcp) {
+  bool ret = true;
+  if( mmc_is_in_sleep_mode ) {
+    //Wake the EMMC
+    //See section 6.6.24 of JESD84-B50
+    uint32_t resp[1];
+    if (sdc_lld_send_cmd_short(sdcp, MMCSD_CMD_SLEEP_AWAKE, 0x0, resp)) {
+      ret = false;
+    } else {
+      //EMMC will pull down DAT0 while waking, wait for it to go high
+    }
+    mmc_is_in_sleep_mode = 0;
+  }
+
+  return(ret);
+}
+
+bool disk_sleep(SDCDriver *sdcp) {
+  bool ret = true;
+  if( ! mmc_is_in_sleep_mode ) {
+    //See section 6.6.24 of JESD84-B50
+    uint32_t resp[1];
+    if (sdc_lld_send_cmd_short(sdcp, MMCSD_CMD_SLEEP_AWAKE, (1<<15), resp)) {
+      ret = false;
+    } else {
+      //EMMC will pull down DAT0 while going to sleep, wait for it to go high
+    }
+
+    mmc_is_in_sleep_mode = 1;
+  }
+  return(ret);
+}
 
 /*-----------------------------------------------------------------------*/
 /* Inidialize a Drive                                                    */
@@ -43,6 +76,8 @@ DSTATUS disk_initialize (
 )
 {
   DSTATUS stat;
+
+
 
   switch (drv) {
 #if HAL_USE_MMC_SPI
@@ -56,6 +91,7 @@ DSTATUS disk_initialize (
     return stat;
 #else
   case SDC:
+    disk_wake(&SDCD1);
     stat = 0;
     /* It is initialized externally, just reads the status.*/
     if (blkGetDriverState(&SDCD1) != BLK_READY)
@@ -91,6 +127,7 @@ DSTATUS disk_status (
     return stat;
 #else
   case SDC:
+    disk_wake(&SDCD1);
     stat = 0;
     /* It is initialized externally, just reads the status.*/
     if (blkGetDriverState(&SDCD1) != BLK_READY)
@@ -103,7 +140,7 @@ DSTATUS disk_status (
   return STA_NODISK;
 }
 
-
+extern void error_log_emmc_disk_io(const DRESULT d, const char function_indicator);
 
 /*-----------------------------------------------------------------------*/
 /* Read Sector(s)                                                        */
@@ -136,23 +173,31 @@ DRESULT disk_read (
     return RES_OK;
 #else
   case SDC:
-    if (blkGetDriverState(&SDCD1) != BLK_READY)
+    disk_wake(&SDCD1);
+    if (blkGetDriverState(&SDCD1) != BLK_READY) {
+      error_log_emmc_disk_io(RES_NOTRDY, 'R');
       return RES_NOTRDY;
-    if (sdcRead(&SDCD1, sector, buff, count))
+    }
+    if (sdcRead(&SDCD1, sector, buff, count)) {
+      error_log_emmc_disk_io(RES_ERROR, 'R');
       return RES_ERROR;
+    }
 
     const systime_t end_time = chTimeNow();
     sdcard_log_disk_read_time(end_time, start_time);
     return RES_OK;
 #endif
   }
+  error_log_emmc_disk_io(RES_PARERR, 'R');
   return RES_PARERR;
 }
 
 
 
 /*-----------------------------------------------------------------------*/
-/* Write Sector(s)                                                       */
+/* Write Sector(s)
+*/
+
 extern void sdcard_log_disk_write_time(const systime_t now_time, const systime_t start_time);
 
 #if _READONLY == 0
@@ -164,6 +209,7 @@ DRESULT disk_write (
 )
 {
   const systime_t start_time = chTimeNow();
+
   switch (drv) {
 #if HAL_USE_MMC_SPI
   case MMC:
@@ -184,11 +230,15 @@ DRESULT disk_write (
     return RES_OK;
 #else
   case SDC:
-    if (blkGetDriverState(&SDCD1) != BLK_READY)
+    disk_wake(&SDCD1);
+    if (blkGetDriverState(&SDCD1) != BLK_READY) {
+      error_log_emmc_disk_io(RES_NOTRDY, 'W');
       return RES_NOTRDY;
-    if (sdcWrite(&SDCD1, sector, buff, count))
+    }
+    if (sdcWrite(&SDCD1, sector, buff, count)) {
+      error_log_emmc_disk_io(RES_ERROR, 'W');
       return RES_ERROR;
-
+    }
     const systime_t end_time = chTimeNow();
 
     sdcard_log_disk_write_time(end_time, start_time);
@@ -196,6 +246,7 @@ DRESULT disk_write (
     return RES_OK;
 #endif
   }
+  error_log_emmc_disk_io(RES_PARERR, 'W');
   return RES_PARERR;
 }
 #endif /* _READONLY */
@@ -230,6 +281,7 @@ DRESULT disk_ioctl (
     }
 #else
   case SDC:
+    disk_wake(&SDCD1);
     switch (ctrl) {
     case CTRL_SYNC:
         return RES_OK;
@@ -248,10 +300,12 @@ DRESULT disk_ioctl (
         return RES_OK;
 #endif
     default:
+        error_log_emmc_disk_io(RES_PARERR, 'I');
         return RES_PARERR;
     }
 #endif
   }
+  error_log_emmc_disk_io(RES_PARERR, 'I');
   return RES_PARERR;
 }
 
