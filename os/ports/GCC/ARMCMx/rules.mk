@@ -104,9 +104,11 @@ VPATH     = $(SRCPATHS)
 # Makefile rules
 #
 
-all: $(OBJS) $(OUTFILES) MAKE_ALL_RULE_HOOK
+all: MAKE_ALL_PRE_RULE_HOOK $(OBJS) $(OUTFILES) MAKE_ALL_RULE_HOOK
 
 MAKE_ALL_RULE_HOOK:
+
+MAKE_ALL_PRE_RULE_HOOK:
 
 $(OBJS): | $(BUILDDIR)
 
@@ -207,10 +209,12 @@ else
 	@echo Done
 endif
 
-clean:
+clean: MAKE_CLEAN_RULE_HOOK
 	@echo Cleaning
 	-rm -fR .dep $(BUILDDIR)
 	@echo Done
+
+MAKE_CLEAN_RULE_HOOK:
 
 #
 # Include the dependency files, should be the last of the makefile
