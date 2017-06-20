@@ -82,6 +82,10 @@ static void set_address(USBDriver *usbp) {
 static bool_t default_handler(USBDriver *usbp) {
   const USBDescriptor *dp;
 
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->default_handler_count++;
+#endif
+
   /* Decoding the request.*/
   switch (((usbp->setup[0] & (USB_RTYPE_RECIPIENT_MASK |
                               USB_RTYPE_TYPE_MASK)) |
@@ -331,6 +335,10 @@ void usbStop(USBDriver *usbp) {
 void usbInitEndpointI(USBDriver *usbp, usbep_t ep,
                       const USBEndpointConfig *epcp) {
 
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->ep_init_count++;
+#endif
+
   chDbgCheckClassI();
   chDbgCheck((usbp != NULL) && (epcp != NULL), "usbInitEndpointI");
   chDbgAssert(usbp->state == USB_ACTIVE,
@@ -364,6 +372,10 @@ void usbInitEndpointI(USBDriver *usbp, usbep_t ep,
 void usbDisableEndpointsI(USBDriver *usbp) {
   unsigned i;
 
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->ep_disable_count++;
+#endif
+
   chDbgCheckClassI();
   chDbgCheck(usbp != NULL, "usbDisableEndpointsI");
   chDbgAssert(usbp->state == USB_SELECTED,
@@ -391,6 +403,10 @@ void usbDisableEndpointsI(USBDriver *usbp) {
  * @special
  */
 void usbPrepareReceive(USBDriver *usbp, usbep_t ep, uint8_t *buf, size_t n) {
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->prep_rx_count++;
+#endif
+
   USBOutEndpointState *osp = usbp->epc[ep]->out_state;
 
   osp->rxqueued           = FALSE;
@@ -417,6 +433,9 @@ void usbPrepareReceive(USBDriver *usbp, usbep_t ep, uint8_t *buf, size_t n) {
  */
 void usbPrepareTransmit(USBDriver *usbp, usbep_t ep,
                         const uint8_t *buf, size_t n) {
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->prep_tx_count++;
+#endif
   USBInEndpointState *isp = usbp->epc[ep]->in_state;
 
   isp->txqueued           = FALSE;
@@ -446,6 +465,9 @@ void usbPrepareTransmit(USBDriver *usbp, usbep_t ep,
  */
 void usbPrepareQueuedReceive(USBDriver *usbp, usbep_t ep,
                              InputQueue *iqp, size_t n) {
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->prep_q_rx_count++;
+#endif
   USBOutEndpointState *osp = usbp->epc[ep]->out_state;
 
   osp->rxqueued           = TRUE;
@@ -472,6 +494,9 @@ void usbPrepareQueuedReceive(USBDriver *usbp, usbep_t ep,
  */
 void usbPrepareQueuedTransmit(USBDriver *usbp, usbep_t ep,
                               OutputQueue *oqp, size_t n) {
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->prep_q_tx_count++;
+#endif
   USBInEndpointState *isp = usbp->epc[ep]->in_state;
 
   isp->txqueued           = TRUE;
@@ -497,6 +522,9 @@ void usbPrepareQueuedTransmit(USBDriver *usbp, usbep_t ep,
  * @iclass
  */
 bool_t usbStartReceiveI(USBDriver *usbp, usbep_t ep) {
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->start_rx_count++;
+#endif
 
   chDbgCheckClassI();
   chDbgCheck(usbp != NULL, "usbStartReceiveI");
@@ -524,7 +552,9 @@ bool_t usbStartReceiveI(USBDriver *usbp, usbep_t ep) {
  * @iclass
  */
 bool_t usbStartTransmitI(USBDriver *usbp, usbep_t ep) {
-
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->start_tx_count++;
+#endif
   chDbgCheckClassI();
   chDbgCheck(usbp != NULL, "usbStartTransmitI");
 
@@ -549,7 +579,9 @@ bool_t usbStartTransmitI(USBDriver *usbp, usbep_t ep) {
  * @iclass
  */
 bool_t usbStallReceiveI(USBDriver *usbp, usbep_t ep) {
-
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->stall_rx_count++;
+#endif
   chDbgCheckClassI();
   chDbgCheck(usbp != NULL, "usbStallReceiveI");
 
@@ -573,7 +605,9 @@ bool_t usbStallReceiveI(USBDriver *usbp, usbep_t ep) {
  * @iclass
  */
 bool_t usbStallTransmitI(USBDriver *usbp, usbep_t ep) {
-
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->stall_tx_count++;
+#endif
   chDbgCheckClassI();
   chDbgCheck(usbp != NULL, "usbStallTransmitI");
 
@@ -626,6 +660,10 @@ void _usb_reset(USBDriver *usbp) {
  */
 void _usb_ep0setup(USBDriver *usbp, usbep_t ep) {
   size_t max;
+
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->ep0_setup_count++;
+#endif
 
   usbp->ep0state = USB_EP0_WAITING_SETUP;
   usbReadSetup(usbp, ep, usbp->setup);
@@ -725,6 +763,11 @@ void _usb_ep0in(USBDriver *usbp, usbep_t ep) {
   size_t max;
 
   (void)ep;
+
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  usbp->ep0_in_count++;
+#endif
+
   switch (usbp->ep0state) {
   case USB_EP0_TX:
     max = usbFetchWord(&usbp->setup[6]);

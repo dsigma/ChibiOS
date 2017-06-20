@@ -29,6 +29,10 @@
 
 #include "stm32_otg.h"
 
+
+#define ENABLE_USB_OTG_DEBUG_COUNTERS      0
+
+
 /*===========================================================================*/
 /* Driver constants.                                                         */
 /*===========================================================================*/
@@ -480,6 +484,24 @@ struct USBDriver {
    * @brief   Current USB device configuration.
    */
   uint8_t                       configuration;
+
+
+#if ENABLE_USB_OTG_DEBUG_COUNTERS
+  volatile uint32_t default_handler_count;
+  volatile uint32_t ep_init_count;
+  volatile uint32_t ep_disable_count;
+  volatile uint32_t prep_rx_count;
+  volatile uint32_t prep_tx_count;
+  volatile uint32_t prep_q_rx_count;
+  volatile uint32_t prep_q_tx_count;
+  volatile uint32_t start_rx_count;
+  volatile uint32_t start_tx_count;
+  volatile uint32_t stall_rx_count;
+  volatile uint32_t stall_tx_count;
+  volatile uint32_t ep0_setup_count;
+  volatile uint32_t ep0_in_count;
+#endif
+
 #if defined(USB_DRIVER_EXT_FIELDS)
   USB_DRIVER_EXT_FIELDS
 #endif
