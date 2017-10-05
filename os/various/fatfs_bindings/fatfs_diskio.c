@@ -10,6 +10,8 @@
 #include "ffconf.h"
 #include "diskio.h"
 
+#define ENABLE_SDC_READ_WRITE_RETRYS    1
+
 #if HAL_USE_MMC_SPI && HAL_USE_SDC
 #error "cannot specify both MMC_SPI and SDC drivers"
 #endif
@@ -178,9 +180,25 @@ DRESULT disk_read (
       error_log_emmc_disk_io(RES_NOTRDY, 'R');
       return RES_NOTRDY;
     }
+
     if (sdcRead(&SDCD1, sector, buff, count)) {
       error_log_emmc_disk_io(RES_ERROR, 'R');
+#if ENABLE_SDC_READ_WRITE_RETRYS
+      if (sdcRead(&SDCD1, sector, buff, count)) {
+        error_log_emmc_disk_io(RES_ERROR, 'R');
+        if (sdcRead(&SDCD1, sector, buff, count)) {
+          error_log_emmc_disk_io(RES_ERROR, 'R');
+          return RES_ERROR;
+        } else {
+          error_log_emmc_disk_io(RES_OK, 'R');
+        }
+      } else {
+        error_log_emmc_disk_io(RES_OK, 'R');
+      }
+#else
       return RES_ERROR;
+#endif
+
     }
 
     const systime_t end_time = chTimeNow();
@@ -237,7 +255,23 @@ DRESULT disk_write (
     }
     if (sdcWrite(&SDCD1, sector, buff, count)) {
       error_log_emmc_disk_io(RES_ERROR, 'W');
+#if ENABLE_SDC_READ_WRITE_RETRYS
+      if (sdcWrite(&SDCD1, sector, buff, count)) {
+        error_log_emmc_disk_io(RES_ERROR, 'W');
+        if (sdcWrite(&SDCD1, sector, buff, count)) {
+          error_log_emmc_disk_io(RES_ERROR, 'W');
+          return RES_ERROR;
+        } else {
+          error_log_emmc_disk_io(RES_OK, 'W');
+        }
+      } else {
+        error_log_emmc_disk_io(RES_OK, 'W');
+      }
+#else
       return RES_ERROR;
+#endif
+
+
     }
     const systime_t end_time = chTimeNow();
 
