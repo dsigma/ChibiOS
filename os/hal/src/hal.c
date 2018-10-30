@@ -67,9 +67,6 @@ void halInit(void) {
 #endif
 #if HAL_USE_PAL || defined(__DOXYGEN__)
   palInit(&pal_default_config);
-  //palClearPad( GPIOA, GPIOA_4_STM_PA4_LED_RED);
-  //palClearPad( GPIOA, GPIOA_8_STM_PA8_LED_GREEN);
-  //palClearPad( GPIOB, GPIOB_4_STM_PB4_LED_BLUE);
 #endif
 #if HAL_USE_ADC || defined(__DOXYGEN__)
   adcInit();
